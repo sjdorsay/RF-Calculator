@@ -87,7 +87,7 @@
         <!-- Prototype -->
         <TabItem x:Name="filtProtoTab">
             <TabItem.Header>
-                <Image Source="Images/Attenuators/PiAttenuator.png" Height="50" Width="50" />
+                <Image Source="Images/Filters/Filter_Config.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -108,7 +108,7 @@
                 <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Filters/ShuntFirstFilter.png" />
+                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="{Binding Path=FiltImage, Mode=OneWay}" />
 
                 <!-- Row 3 -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
@@ -129,7 +129,6 @@
                         <ComboBox Text="{Binding Path=Arch, Mode=OneWayToSource}" Width="100" SelectedIndex="0" SelectionChanged="Filter_Arch_SelectionChanged">
                             <ComboBoxItem Content="Butterworth"></ComboBoxItem>
                             <ComboBoxItem Content="Chebyshev"></ComboBoxItem>
-                            <ComboBoxItem Content="Equiripple"></ComboBoxItem>
                             <ComboBoxItem Content="Flat Phase"></ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
@@ -194,14 +193,18 @@
                             <ComboBoxItem Content="GHz"></ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
+
+                    <!--
+                    <ListView ItemsSource="{Binding Path=ProtoVals, Mode=OneWay}" />
+                    -->
                 </StackPanel>
             </Grid>
         </TabItem>
 
         <!-- Lumped Element Filter -->
-        <TabItem x:Name="filtLumpedTab">
+        <TabItem x:Name="filtLumpedTab" IsEnabled="False">
             <TabItem.Header>
-                <Image Source="Images/Filters/LumpedFilter_Odd_LPF_Shunt.png" Height="50" Width="50" />
+                <Image Source="Images/Filters/Filter_Lumped.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -281,20 +284,20 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
                     <TextBox Margin="10 5" Background="LightGray" Text="{Binding Path=CompString, Mode=OneWay}" />
                 </StackPanel>
 
                 <!-- Row 5 -->
-                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_SynthLumpedValues_Click" />
+                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_Synthesis_Click" />
             </Grid>
         </TabItem>
 
         <!-- Commensurate Line Filter -->
-        <TabItem x:Name="filtCommLineTab">
+        <TabItem x:Name="filtCommLineTab" IsEnabled="False">
             <TabItem.Header>
-                <Image Source="Images/Attenuators/BridgedTeeAttenuator.png" Height="50" Width="50" />
+                <Image Source="Images/Filters/Filter_Commensurate.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -341,21 +344,114 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
                     <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
-                    <TextBlock x:Name="DebugTB" Text="debug" />
                 </StackPanel>
 
                 <!-- Row 5 -->
-                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_SynthCommLineValues_Click" />
+                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_Synthesis_Click" />
+            </Grid>
+        </TabItem>
+
+        <!-- Quarter Wave Line Filter -->
+        <TabItem x:Name="filtQuartWaveTab" IsEnabled="False">
+            <TabItem.Header>
+                <Image Source="Images/Filters/Filter_QuartWave.png" Height="50" Width="50" />
+            </TabItem.Header>
+            
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="20" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 1 -->
+                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
+
+                <!-- Row 2 -->
+                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="{Binding Path=FiltImage, Mode=OneWay}" />
+
+                <!-- Row 3 -->
+                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
+                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
+                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
+
+                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
+                </StackPanel>
+
+                <!-- Row 5 -->
+                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_Synthesis_Click" />
             </Grid>
         </TabItem>
 
         <!-- Stepped Impedance Filter -->
-        <TabItem x:Name="filtSteppedTab">
+        <TabItem x:Name="filtSteppedTab" IsEnabled="False">
             <TabItem.Header>
-                <Image Source="Images/Attenuators/BridgedTeeAttenuator.png" Height="50" Width="50" />
+                <Image Source="Images/Filters/Filter_Stepped.png" Height="50" Width="50" />
+            </TabItem.Header>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="20" />
+                    <RowDefinition Height="20" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 1 -->
+                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
+
+                <!-- Row 2 -->
+                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="{Binding Path=FiltImage, Mode=OneWay}" />
+
+                <!-- Row 3 -->
+                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
+                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="10 10 10 5">
+                        <Label MinWidth="50" Padding="5" Content="Z High" />
+                        <TextBox Text="{Binding Path=HighImpedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="10 5">
+                        <Label MinWidth="50" Padding="5" Content="Z Low" />
+                        <TextBox Text="{Binding Path=LowImpedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
+                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
+
+                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}" Margin="10 5" Background="LightGray" />
+                </StackPanel>
+
+                <!-- Row 5 -->
+                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_Synthesis_Click" />
+            </Grid>
+        </TabItem>
+        
+        <!-- Coupled Line Filter -->
+        <TabItem x:Name="filtCoupLineTab" IsEnabled="False">
+            <TabItem.Header>
+                <Image Source="Images/Filters/Filter_CoupledLine.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -381,107 +477,16 @@
                 <!-- Row 3 -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
                     <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
-                    
-                    <StackPanel Orientation="Horizontal" Margin="10 10 10 5">
-                        <Label MinWidth="50" Padding="5" Content="Z High" />
-                        <TextBox Text="{Binding Path=HighImpedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="10 5">
-                        <Label MinWidth="50" Padding="5" Content="Z Low" />
-                        <TextBox Text="{Binding Path=LowImpedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}" Margin="10 5" Background="LightGray" />
+                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
                 </StackPanel>
 
                 <!-- Row 5 -->
-                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_SynthSteppedValues_Click" />
-            </Grid>
-        </TabItem>
-        
-        <!-- Coupled Line Filter -->
-        <TabItem x:Name="filtCoupLineTab">
-            <TabItem.Header>
-                <Image Source="Images/Attenuators/PiAttenuator.png" Height="50" Width="50" />
-            </TabItem.Header>
-
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                </Grid.RowDefinitions>
-
-                <!-- Row 1 -->
-
-                <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/PiAttenuator-Dimensions.png" />
-
-                <!-- Row 3 -->
-                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
-                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Atten" />
-                        <TextBox Text="" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="dB"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Z0" />
-                        <TextBox Text="" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Tol" />
-                        <ComboBox Text="" Width="100" SelectedIndex="0">
-                            <ComboBoxItem Content="0.1"></ComboBoxItem>
-                            <ComboBoxItem Content="1"></ComboBoxItem>
-                            <ComboBoxItem Content="2"></ComboBoxItem>
-                            <ComboBoxItem Content="5"></ComboBoxItem>
-                        </ComboBox>
-                        <Label MinWidth="50" Padding="5" Content="%"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
-
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="R1" />
-                        <TextBox Text="" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
-                    </StackPanel>
-
-                    <Label Content="OR" Margin="90 0 0 0" />
-
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="R2" />
-                        <TextBox Text="" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
-
-                <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" />
-
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" />
+                <Button Grid.Row="3" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Filter_Synthesis_Click" />
             </Grid>
         </TabItem>
     </TabControl>

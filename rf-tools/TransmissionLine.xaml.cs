@@ -406,6 +406,8 @@ namespace rf_tools
                 ImageData imgData = ImageDataFactory.Create(new Uri("C:\\Users\\Visitor\\source\\repos\\rf-tools\\rf-tools\\Images\\TransmissionLines\\Microstrip.png"));
                 Image img = new Image(imgData);
 
+                img.Scale(0.5f, 0.5f);
+
                 document.Add(img);
 
                 // Section 1 - Material Properties
@@ -1258,6 +1260,9 @@ namespace rf_tools
 
         private void Help_Button_Click(object sender, RoutedEventArgs e)
         {
+            string filePath = Environment.CurrentDirectory;
+
+            System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\transmissionLine.html");
         }
 
         private void RadioButton_Checked(object sender, RoutedEventArgs e)

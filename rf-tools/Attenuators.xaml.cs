@@ -1,12 +1,18 @@
-﻿using System;
+﻿using iText.IO.Image;
+using iText.Kernel.Pdf;
+using iText.Layout;
+using iText.Layout.Element;
+using System;
 using System.ComponentModel;
 using System.Windows;
+using Image = iText.Layout.Element.Image;
+using TextAlignment = iText.Layout.Properties.TextAlignment;
 
 // iText7 PDF .NET Module
 
 namespace rf_tools
 {
-    public class Attenuator : INotifyPropertyChanged
+    public class AttenuatorParameters : INotifyPropertyChanged
     {
         private double res1;
         private double res2;
@@ -78,10 +84,10 @@ namespace rf_tools
 
         private bool genReport = false;
 
-        readonly Attenuator pi_atten = new Attenuator();
-        readonly Attenuator tee_atten = new Attenuator();
-        readonly Attenuator btee_atten = new Attenuator();
-        readonly Attenuator refl_atten = new Attenuator();
+        readonly AttenuatorParameters pi_atten = new AttenuatorParameters();
+        readonly AttenuatorParameters tee_atten = new AttenuatorParameters();
+        readonly AttenuatorParameters btee_atten = new AttenuatorParameters();
+        readonly AttenuatorParameters refl_atten = new AttenuatorParameters();
 
         /** Attenuator Initilazation Function **/
         public Attenuators()
@@ -147,8 +153,45 @@ namespace rf_tools
             return stdRes;
         }
 
+        /** Calculate Attenuation of PI Attenuator **/
+        private double Atten_PI_GetAttenuation(double r1, double r2, double r3)
+        {
+            double imped;
+            double a;
+            double atten;
+            double[] ABCD = new double[4];
+
+            ABCD[0] = 1 + (r2 / r1);
+            ABCD[1] = r2;
+            ABCD[3] = 1 + (r2 / r1);
+            ABCD[2] = (ABCD[3] + 1) / r1;
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            a = (ABCD[0] + ABCD[1] / imped + ABCD[2] * imped + ABCD[3]) / 2;
+            atten = 20 * Math.Log10(Math.Abs(a));
+
+            return atten;
+        }
+
+        /** Calculate Input Impedanceof PI Attenuator **/
+        private double Atten_PI_GetImpedance(double r1, double r2, double r3)
+        {
+            double imped;
+            double[] ABCD = new double[4];
+
+            ABCD[0] = 1 + (r2 / r1);
+            ABCD[1] = r2;
+            ABCD[3] = 1 + (r2 / r1);
+            ABCD[2] = (ABCD[3] + 1) / r1;
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            return imped;
+        }
+
         /** PI Attenuator - Synthesis / Evalute **/
-        public void atten_pi_run()
+        public void Atten_PI_Run()
         {
             // Initialize resistor values
             double r1 = 0;
@@ -179,28 +222,94 @@ namespace rf_tools
                 r1 = pi_atten.Res1;
                 r2 = pi_atten.Res2;
 
-                double A = 1 + (r2 / r1);
-                double B = r2;
-                double D = 1 + (r2 / r1);
-                double C = (D + 1) / r1;
-
-                imped = Math.Sqrt(A * B / (C * D));
-
-                a = (A + B / imped + C * imped + D) / 2;
-                double atten = 20 * Math.Log10(Math.Abs(a));
-
-                pi_atten.Attenuation = atten;
-                pi_atten.Impedance = imped;
+                pi_atten.Attenuation = Atten_PI_GetAttenuation(r1, r2, r2);
+                pi_atten.Impedance = Atten_PI_GetImpedance(r1, r2, r2);
             }
 
             if (genReport)
             {
+                double[] attenuation = new double[3];
 
+                attenuation[0] = pi_atten.Attenuation;
+                attenuation[1] = pi_atten.Attenuation;
+                attenuation[2] = pi_atten.Attenuation;
+
+                double[] impedance = new double[3];
+
+                impedance[0] = pi_atten.Impedance;
+                impedance[1] = pi_atten.Impedance;
+                impedance[2] = pi_atten.Impedance;
+
+                tol = pi_atten.Tolerance/100;
+
+                double tempAtten;
+                double tempImpedance;
+
+                // Find the maximum and minimum attenuation and impedance
+                for (int i = 0; i < 8; i++)
+                {
+                    tempAtten = Atten_PI_GetAttenuation(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r2 * (1 + (2 * (4 & i) - 1) * tol)
+                        );
+                    
+                    tempImpedance = Atten_PI_GetImpedance(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r2 * (1 + (2 * (4 & i) - 1) * tol)
+                        );
+
+                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
+                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
+
+                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
+                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
+                }
+
+                Gen_Report(attenuation, impedance);
             }
         }
 
+        /** Calculate Attenuation of Tee Attenuator **/
+        private double Atten_TEE_GetAttenuation(double r1, double r2, double r3)
+        {
+            double imped;
+            double a;
+            double atten;
+            double[] ABCD = new double[4];
+
+            ABCD[0] = 1 + (r1 / r2);
+            ABCD[1] = r1 * (ABCD[0] + 1);
+            ABCD[2] = 1 / r2;
+            ABCD[3] = 1 + (r1 / r2);
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            a = (ABCD[0] + ABCD[1] / imped + ABCD[2] * imped + ABCD[3]) / 2;
+            atten = 20 * Math.Log10(Math.Abs(a));
+
+            return atten;
+        }
+
+        /** Calculate Input Impedanceof Tee Attenuator **/
+        private double Atten_TEE_GetImpedance(double r1, double r2, double r3)
+        {
+            double imped;
+            double[] ABCD = new double[4];
+
+            ABCD[0] = 1 + (r1 / r2);
+            ABCD[1] = r1 * (ABCD[0] + 1);
+            ABCD[2] = 1 / r2;
+            ABCD[3] = 1 + (r1 / r2);
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            return imped;
+        }
+
         /** Tee Attenuator - Synthesis / Evalute **/
-        public void atten_tee_run()
+        public void Atten_TEE_Run()
         {
             // Initialize resistor values for a 0 dB attenuator
             double r1 = 0;
@@ -232,23 +341,67 @@ namespace rf_tools
                 r1 = tee_atten.Res1;
                 r2 = tee_atten.Res2;
 
-                double A = 1 + (r1 / r2);
-                double B = r1 * (A + 1);
-                double C = 1 / r2;
-                double D = 1 + (r1 / r2);
+                tee_atten.Attenuation = Atten_TEE_GetAttenuation(r1, r2, r1);
+                tee_atten.Impedance = Atten_TEE_GetImpedance(r1, r2, r1);
+            }
 
-                imped = Math.Sqrt(D * B / (C * A));
+            if (genReport)
+            {
 
-                a = (A + B / imped + C * imped + D) / 2;
-                double atten = 20 * Math.Log10(Math.Abs(a));
-
-                tee_atten.Attenuation = atten;
-                tee_atten.Impedance = imped;
             }
         }
 
+        /** Calculate Attenuation of BTee Attenuator **/
+        private double Atten_BTEE_GetAttenuation(double r1, double r2, double r3, double r4)
+        {
+            double imped;
+            double a;
+            double atten;
+            double[] ABCD = new double[4];
+
+            // Calculate supplemental equations for determining ABCD matrix
+            double x0 = r1 + r3 + r2 * (1 + (r3 / r4));
+            double x1 = r4 * (r1 + r2) + r3 * (r2 + r4);
+            double x2 = x0 - r1;
+
+            // Find the ABCD matrix parameters
+            ABCD[0] = 1 + r1 * (r2 / x1);
+            ABCD[1] = r1 * (x2 / x0);
+            ABCD[2] = (r1 + r2 + r3) / x1;
+            ABCD[3] = 1 + r1 * (r3 / x1);
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            a = (ABCD[0] + ABCD[1] / imped + ABCD[2] * imped + ABCD[3]) / 2;
+            atten = 20 * Math.Log10(Math.Abs(a));
+
+            return atten;
+        }
+
+        /** Calculate Input Impedanceof BTee Attenuator **/
+        private double Atten_BTEE_GetImpedance(double r1, double r2, double r3, double r4)
+        {
+            double imped;
+            double[] ABCD = new double[4];
+
+            // Calculate supplemental equations for determining ABCD matrix
+            double x0 = r1 + r3 + r2 * (1 + (r3 / r4));
+            double x1 = r4 * (r1 + r2) + r3 * (r2 + r4);
+            double x2 = x0 - r1;
+
+            // Find the ABCD matrix parameters
+            ABCD[0] = 1 + r1 * (r2 / x1);
+            ABCD[1] = r1 * (x2 / x0);
+            ABCD[2] = (r1 + r2 + r3) / x1;
+            ABCD[3] = 1 + r1 * (r3 / x1);
+
+            imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
+
+            return imped;
+        }
+
         /** Bridged Tee Attenuator - Synthesis / Evalute **/
-        public void atten_btee_run()
+        public void Atten_BTEE_Run()
         {
             // Initialize resistor values for a 0 dB attenuator
             double r1 = 1e6;
@@ -289,32 +442,42 @@ namespace rf_tools
                 r3 = btee_atten.Res3;
                 r4 = btee_atten.Res4;
 
-                // Calculate supplemental equations for determining ABCD matrix
-                double x0 = r1 + r3 + r2 * (1 + (r3 / r4));
-                double x1 = r4 * (r1 + r2) + r3 * (r2 + r4);
-                double x2 = x0 - r1;
-
-                // Find the ABCD matrix parameters
-                double A = 1 + r1 * (r2 / x1);
-                double B = r1 * (x2 / x0);
-                double C = (r1 + r2 + r3) / x1;
-                double D = 1 + r1 * (r3 / x1);
-
-                // Use the ABCD matrix to solve for the impedance value
-                imped = Math.Sqrt(D * B / (C * A));
-
-                // Use the ABCD matrix to solve for the attenuation
-                a = (A + B / imped + C * imped + D) / 2;
-                double atten = 20 * Math.Log10(Math.Abs(a));
-
                 // Update properties with new values
-                btee_atten.Attenuation = atten;
-                btee_atten.Impedance = imped;
+                btee_atten.Attenuation = Atten_BTEE_GetAttenuation(r1, r2, r3, r4);
+                btee_atten.Impedance = Atten_BTEE_GetImpedance(r1, r2, r3, r4);
+            }
+
+            if (genReport)
+            {
+
             }
         }
 
+        /** Calculate Attenuation of Reflection Attenuator **/
+        private double Atten_Refl_GetAttenuation(double r1, double r2)
+        {
+            double imped;
+            double a;
+            double atten;
+
+            imped = Math.Sqrt(r1 * r2);
+
+            a = (imped + r1) / (imped - r1);
+            atten = 20 * Math.Log10(Math.Abs(a));
+
+            return atten;
+        }
+
+        /** Calculate Input Impedanceof Reflection Attenuator **/
+        private double Atten_Refl_GetImpedance(double r1, double r2)
+        {
+            double imped = Math.Sqrt(r1 * r2);
+
+            return imped;
+        }
+
         /** Reflection Attenuator - Synthesis / Evalute **/
-        public void atten_refl_run()
+        public void Atten_Refl_Run()
         {
             // Initialize resistor values for a 0 dB attenuator
             double r1 = 1e6;
@@ -346,16 +509,78 @@ namespace rf_tools
                 r1 = refl_atten.Res1;
                 r2 = refl_atten.Res2;
 
-                imped = 50;
-                double atten = 20 * Math.Log10(1.4125);
+                refl_atten.Attenuation = Atten_Refl_GetAttenuation(r1, r2); ;
+                refl_atten.Impedance = Atten_Refl_GetImpedance(r1, r2); ;
+            }
 
-                refl_atten.Attenuation = atten;
-                refl_atten.Impedance = imped;
+            if(genReport)
+            {
+
             }
         }
 
+        private void Gen_Report(double[] atten, double[] imped)
+        {
+            // Get path to user documents assuming C drive
+            string UserName = Environment.UserName;
+            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+
+            // Must have write permissions to the path folder
+            PdfWriter writer = new PdfWriter(DocuPath + "Attenuator_Report.pdf");
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            /** Setup Document Formats **/
+            // Setup Title formatting
+            Paragraph title = new Paragraph("Attenuator Report")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetFontSize(24);
+
+            // Setup Header formatting
+            Paragraph header = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetFontSize(16);
+
+            // Setup body formatting
+            Paragraph body = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetFontSize(12);
+
+            /** Generature Document **/
+            // Add title
+            document.Add(title);
+
+            // Section 1 - Material Properties
+            header.Add("1. Attenuation");
+
+            body.Add("min_atten = " + atten[0] + " dB\n");
+            body.Add("typ_atten = " + atten[1] + " dB\n");
+            body.Add("max_atten = " + atten[2] + " dB\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 1 - Impedance Properties
+            header.Add("2. Impedance");
+
+            body.Add("min_imped = " + imped[0] + " Ohm\n");
+            body.Add("typ_imped = " + imped[1] + " Ohm\n");
+            body.Add("max_imped = " + imped[2] + " Ohm\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            document.Close();
+        }
+
         /** Synthesis Click Handler **/
-        private void atten_synthesis_click(object sender, RoutedEventArgs e)
+        private void Atten_Synthesis_Click(object sender, RoutedEventArgs e)
         {
             attenRunSynthesis = true;
             attenRunEvaluate = false;
@@ -365,27 +590,27 @@ namespace rf_tools
             {
                 /**Tab 0: PI Attenuator**/
                 case 0:
-                    atten_pi_run();
+                    Atten_PI_Run();
                     break;
 
                 /**Tab 1: Tee Attenuator**/
                 case 1:
-                    atten_tee_run();
+                    Atten_TEE_Run();
                     break;
 
                 /**Tab 2: Bridged Tee Attenuator**/
                 case 2:
-                    atten_btee_run();
+                    Atten_BTEE_Run();
                     break;
 
                 /**Tab 3: Reflection Attenuator**/
                 case 3:
-                    atten_refl_run();
+                    Atten_Refl_Run();
                     break;
 
                 /**Default: PI Attenuator**/
                 default:
-                    atten_pi_run();
+                    Atten_PI_Run();
                     break;
             }
 
@@ -394,7 +619,7 @@ namespace rf_tools
         }
 
         /** Evaluate Click Handler **/
-        private void atten_evaluate_click(object sender, RoutedEventArgs e)
+        private void Atten_Evaluate_Click(object sender, RoutedEventArgs e)
         {
             attenRunSynthesis = false;
             attenRunEvaluate = true;
@@ -404,27 +629,27 @@ namespace rf_tools
             {
                 /**Tab 0: PI Attenuator**/
                 case 0:
-                    atten_pi_run();
+                    Atten_PI_Run();
                     break;
 
                 /**Tab 1: Tee Attenuator**/
                 case 1:
-                    atten_tee_run();
+                    Atten_TEE_Run();
                     break;
 
                 /**Tab 2: Bridged Tee Attenuator**/
                 case 2:
-                    atten_btee_run();
+                    Atten_BTEE_Run();
                     break;
 
                 /**Tab 3: Reflection Attenuator**/
                 case 3:
-                    atten_refl_run();
+                    Atten_Refl_Run();
                     break;
 
                 /**Default: PI Attenuator**/
                 default:
-                    atten_pi_run();
+                    Atten_PI_Run();
                     break;
             }
 
@@ -432,16 +657,28 @@ namespace rf_tools
             attenRunEvaluate = false;
         }
 
+        /** Help Button Click Handler **/
         private void Help_Button_Click(object sender, RoutedEventArgs e)
         {
+            string filePath = Environment.CurrentDirectory;
+
+            System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\attenuator.html");
         }
 
+        /** Report Generation Checkbox Handler **/
         private void RadioButton_Checked(object sender, RoutedEventArgs e)
         {
             genReport = true;
         }
 
+        /** Report Generation Checkbox Handler **/
         private void RadioButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            genReport = false;
+        }
+
+        /** Tab Selection Selection Change Handler **/
+        private void attTabCtrl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             genReport = false;
         }

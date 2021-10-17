@@ -10,6 +10,7 @@ namespace rf_tools
     public class FilterPrototype : INotifyPropertyChanged
     {
         private double[] protoVals;
+        private BitmapImage filtImage;
 
         private string type;
         private string arch;
@@ -105,6 +106,15 @@ namespace rf_tools
             }
         }
 
+        public BitmapImage FiltImage
+        {
+            get { return filtImage; }
+            set
+            {
+                filtImage = value;
+                NotifyPropertyChanged("FiltImage");
+            }
+        }
 
 
         public string Type
@@ -264,9 +274,75 @@ namespace rf_tools
     public class SteppedFilterParams : INotifyPropertyChanged
     {
         private string tLineString;
+        private BitmapImage filtImage;
 
         public double LowImpedance { get; set; }
         public double HighImpedance { get; set; }
+
+        public string TLineString
+        {
+            get { return tLineString; }
+            set
+            {
+                tLineString = value;
+                NotifyPropertyChanged("TLineString");
+            }
+        }
+
+        public BitmapImage FiltImage
+        {
+            get { return filtImage; }
+            set
+            {
+                filtImage = value;
+                NotifyPropertyChanged("FiltImage");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+    }
+
+    public class QuartWaveFilterParams : INotifyPropertyChanged
+    {
+        private string tLineString;
+        private BitmapImage filtImage;
+
+        public string TLineString
+        {
+            get { return tLineString; }
+            set
+            {
+                tLineString = value;
+                NotifyPropertyChanged("TLineString");
+            }
+        }
+
+        public BitmapImage FiltImage
+        {
+            get { return filtImage; }
+            set
+            {
+                filtImage = value;
+                NotifyPropertyChanged("FiltImage");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+    }
+
+    public class CoupledLineParams : INotifyPropertyChanged
+    {
+        private string tLineString;
 
         public string TLineString
         {
@@ -286,6 +362,7 @@ namespace rf_tools
         }
     }
 
+
     /// <summary>
     /// Interaction logic for Filter.xaml
     /// </summary>
@@ -298,6 +375,8 @@ namespace rf_tools
         readonly LumpedFilterParams lumpedParams = new LumpedFilterParams();
         readonly CommLineFilterParams commParams = new CommLineFilterParams();
         readonly SteppedFilterParams steppedParams = new SteppedFilterParams();
+        readonly QuartWaveFilterParams quartWaveParams = new QuartWaveFilterParams();
+        readonly CoupledLineParams coupledLineParams = new CoupledLineParams();
 
         public Filter()
         {
@@ -306,20 +385,41 @@ namespace rf_tools
             // Assigning linear phase prototype values to jagged array
             flatPhaseProto = new double[10][];
 
+            // Data copied directly from 
             flatPhaseProto[0] = new double[] { 2.0000, 1.0000 };
             flatPhaseProto[1] = new double[] { 1.5774, 0.4226, 1.0000 };
             flatPhaseProto[2] = new double[] { 1.2550, 0.5528, 0.1922, 1.0000 };
+            flatPhaseProto[3] = new double[] { 1.0598, 0.5116, 0.3181, 0.1104, 1.0000 };
+            flatPhaseProto[4] = new double[] { 0.9303, 0.4577, 0.3312, 0.2090, 0.0718, 1.0000 };
+            flatPhaseProto[5] = new double[] { 0.8377, 0.4116, 0.3158, 0.2364, 0.1480, 0.0505,
+                1.0000 };
+            flatPhaseProto[6] = new double[] { 0.7677, 0.3744, 0.2944, 0.2378, 0.1778, 0.1104,
+                0.0375, 1.0000 };
+            flatPhaseProto[7] = new double[] { 0.7125, 0.3446, 0.2735, 0.2297, 0.1867, 0.1387,
+                0.0855, 0.0289, 1.0000 };
+            flatPhaseProto[8] = new double[] { 0.6678, 0.3203, 0.2547, 0.2184, 0.1859, 0.1506,
+                0.1111, 0.0682, 0.0230, 1.0000 };
+            flatPhaseProto[9] = new double[] { 0.6305, 0.3002, 0.2384, 0.2066, 0.1808, 0.1539,
+                0.1240, 0.0911, 0.0557, 0.0187, 1.0000};
 
             filterTabCtrl.DataContext = prototype;
             filtLumpedTab.DataContext = lumpedParams;
             filtCommLineTab.DataContext = commParams;
             filtSteppedTab.DataContext = steppedParams;
+            filtQuartWaveTab.DataContext = quartWaveParams;
+            filtCoupLineTab.DataContext = coupledLineParams;
 
             // Set default configuration
             prototype.IsLpfEn = true;
             prototype.IsHpfEn = false;
             prototype.IsBpfEn = false;
             prototype.IsBsfEn = false;
+            prototype.EnableBandwidth = false;
+            prototype.EnableRipple = false;
+
+            // Lumpedelement filter is always available
+            if (filtLumpedTab != null)
+                filtLumpedTab.IsEnabled = true;
 
             if (filtCommLineTab != null)
                 filtCommLineTab.IsEnabled = prototype.IsLpfEn;
@@ -327,12 +427,15 @@ namespace rf_tools
             if (filtSteppedTab != null)
                 filtSteppedTab.IsEnabled = prototype.IsLpfEn;
 
-            if (filtCoupLineTab != null)
+            if (filtQuartWaveTab != null)
                 filtCoupLineTab.IsEnabled = prototype.EnableBandwidth;
+
+            if (filtCoupLineTab != null)
+                filtCoupLineTab.IsEnabled = prototype.IsBpfEn;
 
             DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(0.5);
-            timer.Tick += timer_Tick;
+            timer.Tick += Timer_Tick;
 
             timer.Start();
         }
@@ -374,9 +477,6 @@ namespace rf_tools
                     break;
             }
 
-            // Calculate the value increments
-            double inc = Math.Pow(10, 1 / esr);
-
             // Find the closest power
             if (value != 0)
             {
@@ -387,7 +487,7 @@ namespace rf_tools
                 double exp = 2 + (Math.Round(esr * deci) / esr);
 
                 stdVal = Math.Round(Math.Pow(10, exp));
-                stdVal = stdVal * Math.Pow(10, inte - 2);
+                stdVal *= Math.Pow(10, inte - 2);
             }
 
             return stdVal;
@@ -484,12 +584,15 @@ namespace rf_tools
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Even_LPF_Series.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Even_LPF_Series.png", UriKind.Relative));
+                        steppedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/SteppedImpedance/SteppedFilter_Even_LPF_Series.png", UriKind.Relative));
+
                     }
                     else
                     {
                         // Shunt Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Even_LPF_Shunt.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Even_LPF_Shunt.png", UriKind.Relative));
+                        steppedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/SteppedImpedance/SteppedFilter_Even_LPF_Shunt.png", UriKind.Relative));
                     }
                 }
 
@@ -498,22 +601,23 @@ namespace rf_tools
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Even_HPF_Series.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Even_HPF_Series.png", UriKind.Relative));
                     }
                     else
                     {
                         // Shunt Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Even_HPF_Shunt.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Even_HPF_Shunt.png", UriKind.Relative));
 
                     }
                 }
 
                 if ("BPF" == type)
                 {
+                    quartWaveParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/QuarterWave/QuartWave_BPF.png", UriKind.Relative));
+
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-
                     }
                     else
                     {
@@ -524,10 +628,11 @@ namespace rf_tools
 
                 if ("BSF" == type)
                 {
+                    quartWaveParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/QuarterWave/QuartWave_BSF.png", UriKind.Relative));
+
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-
                     }
                     else
                     {
@@ -544,12 +649,14 @@ namespace rf_tools
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Odd_LPF_Series.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Odd_LPF_Series.png", UriKind.Relative));
+                        steppedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/SteppedImpedance/SteppedFilter_Odd_LPF_Series.png", UriKind.Relative));
                     }
                     else
                     {
                         // Shunt Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Odd_LPF_Shunt.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Odd_LPF_Shunt.png", UriKind.Relative));
+                        steppedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/SteppedImpedance/SteppedFilter_Odd_LPF_Shunt.png", UriKind.Relative));
                     }
                 }
 
@@ -558,17 +665,19 @@ namespace rf_tools
                     if ("Series" == firstElem)
                     {
                         // Series Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Odd_HPF_Series.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Odd_HPF_Series.png", UriKind.Relative));
                     }
                     else
                     {
                         // Shunt Elem
-                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/LumpedFilter_Odd_HPF_Shunt.png", UriKind.Relative));
+                        lumpedParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/Lumped/LumpedFilter_Odd_HPF_Shunt.png", UriKind.Relative));
                     }
                 }
 
                 if ("BPF" == type)
                 {
+                    quartWaveParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/QuarterWave/QuartWave_BPF.png", UriKind.Relative));
+
                     if ("Series" == firstElem)
                     {
                         // Series Elem
@@ -583,6 +692,8 @@ namespace rf_tools
 
                 if ("BSF" == type)
                 {
+                    quartWaveParams.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/QuarterWave/QuartWave_BSF.png", UriKind.Relative));
+
                     if ("Series" == firstElem)
                     {
                         // Series Elem
@@ -647,7 +758,6 @@ namespace rf_tools
                 {
                     butterworthValues[i - 1] = 4 * aR1 * aR0 / (bR0 * butterworthValues[i - 2]);
                 }
-
 
                 aR0 = aR1;
                 bR0 = bR1;
@@ -1041,7 +1151,7 @@ namespace rf_tools
             int Nind = (int)Math.Floor(order / 2.0);
             int Ncap = (int)Math.Floor(order / 2.0);
             int NTlines = 0;
-            int Ncomp = 0;
+            int Ncomp;
 
             // Check for odd order filter
             if (1 == order % 2)
@@ -1082,6 +1192,8 @@ namespace rf_tools
                 {
                     if (0 == i)
                     {
+                        // The first series element should be an inductor
+                        // Use R-K transformation
                         n2 = 1 + 1 / prototype.ProtoVals[0];
 
                         impedVals[0] = n2 * impedance;
@@ -1095,6 +1207,8 @@ namespace rf_tools
 
                     if (Ncomp - 1 == i)
                     {
+                        // The last series element should be an inductor
+                        // Use R-K transformation
                         n2 = 1 + 1 / prototype.ProtoVals[Ncomp - 1];
 
                         impedVals[NTlines - 1] = n2 * impedance;
@@ -1116,7 +1230,7 @@ namespace rf_tools
                         double tempImped;
 
                         // Add additional capacitance to existing value
-                        tempImped = 1 / impedVals[i - 1];
+                        tempImped = 1 / impedVals[j - 1];
                         tempImped += 1 / Z2;
                         tempImped = 1 / tempImped;
 
@@ -1128,6 +1242,8 @@ namespace rf_tools
 
                         impedVals[j + 1] = Z2;
                         angleVals[j + 1] = 45;
+
+                        j += 1;
                     }
                 }
                 else
@@ -1142,7 +1258,7 @@ namespace rf_tools
                         double tempImped;
 
                         // Add additional capacitance to existing value
-                        tempImped = 1 / impedVals[i];
+                        tempImped = 1 / impedVals[j];
                         tempImped += prototype.ProtoVals[i] / impedance;
                         tempImped = 1 / tempImped;
 
@@ -1161,17 +1277,23 @@ namespace rf_tools
             // Create output report for TLine values
             for (int i = 0; i < NTlines; i++)
             {
-                commParams.TLineString += string.Format("TL{0} = {1} Ohm, {2} deg\n", i, impedVals[i], angleVals[i]);
+                commParams.TLineString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n", 
+                    i + 1, 
+                    Math.Round(impedVals[i], 2), 
+                    angleVals[i]);
             }
         }
 
         // Stepped Impedance Filter (LPF only)
         private void Filter_CalcStepped()
         {
+            // This filter can only be used for LPF
             if ("LPF" != prototype.Type) return;
 
             bool toggle = false;
 
+            // Setup series/shunt element toggling
             if ("Series" == prototype.FirstElem) toggle = true;
             if ("Shunt" == prototype.FirstElem) toggle = false;
 
@@ -1179,6 +1301,7 @@ namespace rf_tools
             double Zhigh = steppedParams.HighImpedance;
             double Zlow = steppedParams.LowImpedance;
             double impedance = prototype.Impedance;
+
             int order = prototype.Order;
 
             double[] impedVals = new double[order];
@@ -1197,6 +1320,7 @@ namespace rf_tools
                     angleVals[i] = prototype.ProtoVals[i] * Zlow / impedance;
                 }
 
+                // Convert angle/phase from radians to degrees
                 angleVals[i] *= 180 / Math.PI;
 
                 toggle = !toggle;
@@ -1207,18 +1331,128 @@ namespace rf_tools
             // Create output report for TLine values
             for (int i = 0; i < order; i++)
             {
-                steppedParams.TLineString += string.Format("TL{0} = {1} Ohm, {2} deg\n", i, impedVals[i], angleVals[i]);
+                steppedParams.TLineString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n",
+                    i + 1,
+                    Math.Round(impedVals[i], 2),
+                    Math.Round(angleVals[i], 2));
             }
         }
 
-        // Resonant Stub Filter (BPF or BSF)
+        // Quarter Wave Stub Filter (BPF or BSF)
+        private void Filter_CalcQuartWave()
+        {
+            // This filter only works for BSF or BPF
+            if (!prototype.EnableBandwidth)
+                return;
 
+            string type = prototype.Type;
 
-        // Coupled Line Filter (BPF or BSF)
+            double impedance = prototype.Impedance;
 
+            double bandwidth = ConvertToInternalUnits(prototype.Bandwidth, prototype.BandwidthUnits);
+            double frequency = ConvertToInternalUnits(prototype.Frequency, prototype.FrequencyUnits);
 
-        // Gap-Coupled Filter (BPF only)
+            double delta = bandwidth / frequency;
 
+            int NTlines = prototype.Order;
+
+            double[] impedVals = new double[NTlines];
+            double[] angleVals = new double[NTlines];
+
+            for (int i = 0; i < NTlines; i++)
+            {
+                if ("BPF" == type)
+                {
+                    // Band Pass Filter
+                    impedVals[NTlines - 1 - i] = Math.PI * impedance * delta / (4 * prototype.ProtoVals[i]);
+                    angleVals[NTlines - 1 - i] = 90;
+                }
+                else
+                {
+                    // Band Stop Filter
+                    angleVals[NTlines - 1 - i] = 4 * impedance / (Math.PI * prototype.ProtoVals[i] * delta);
+                    angleVals[NTlines - 1 - i] = 90;
+                }
+            }
+
+            quartWaveParams.TLineString = "Transmission Line Values\n";
+            quartWaveParams.TLineString += string.Format("TL{0} = {1} Ohm, {2} deg\n",
+                1,
+                Math.Round(impedVals[0], 2),
+                Math.Round(angleVals[0], 2));
+
+            for (int i = 1; i < NTlines; i++)
+            {
+                quartWaveParams.TLineString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n", 
+                    2 * i, 
+                    Math.Round(impedance, 2), 
+                    Math.Round(90.0, 2));
+
+                quartWaveParams.TLineString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n", 
+                    2 * i + 1, 
+                    Math.Round(impedVals[i], 2), 
+                    Math.Round(angleVals[i], 2));
+            }
+        }
+        
+        // Coupled Line Filter (BPF only)
+        private void Filter_CoupledLine()
+        {
+            // This filter can only be used for LPF
+            if ("BPF" != prototype.Type) return;
+
+            // Gather configuration information
+            int order = prototype.Order;
+
+            double impedance = prototype.Impedance;
+
+            double bandwidth = ConvertToInternalUnits(prototype.Bandwidth, prototype.BandwidthUnits);
+            double frequency = ConvertToInternalUnits(prototype.Frequency, prototype.FrequencyUnits);
+
+            double delta = bandwidth / frequency;
+
+            // Setup output variables
+            double[] evenImpedance = new double[order + 1];
+            double[] oddImpedance = new double[order + 1];
+            double conv;
+
+            // Calculate even / odd impedances
+            conv = Math.Sqrt(Math.PI * delta / (2 * prototype.ProtoVals[0]));
+
+            evenImpedance[0] = impedance * (1 + conv + Math.Pow(conv, 2));
+            oddImpedance[0] = impedance * (1 - conv + Math.Pow(conv, 2));
+
+            // Calculate even / odd impedances
+            for (int i = 1; i < order; i++)
+            {
+                conv = Math.PI * delta / 2;
+                conv /= Math.Sqrt(prototype.ProtoVals[i - 1] * prototype.ProtoVals[i]);
+
+                evenImpedance[i] = impedance * (1 + conv + Math.Pow(conv, 2));
+                oddImpedance[i] = impedance * (1 - conv + Math.Pow(conv, 2));
+            }
+
+            // Calculate even / odd impedances
+            conv = Math.Sqrt(Math.PI * delta / 2);
+            conv /= Math.Sqrt(prototype.ProtoVals[order - 1] * prototype.ProtoVals[order]);
+
+            evenImpedance[order] = impedance * (1 + conv + Math.Pow(conv, 2));
+            oddImpedance[order] = impedance * (1 - conv + Math.Pow(conv, 2));
+
+            coupledLineParams.TLineString = "Transmission Line Values\n";
+
+            for (int i = 0; i < order + 1; i++)
+            {
+                coupledLineParams.TLineString += string.Format(
+                    "Z{0} even = {1} Ohm, Z{0} odd = {2} Ohm\n",
+                    i + 1,
+                    Math.Round(evenImpedance[i], 2),
+                    Math.Round(oddImpedance[i], 2));
+            }
+        }
 
         /****************************************
         ******   Event Handler Functions   ******
@@ -1231,11 +1465,6 @@ namespace rf_tools
             ComboBoxItem comboObj = (ComboBoxItem)e.AddedItems[0];
 
             string selectedItem = comboObj.Content.ToString();
-
-            if (DebugTB != null)
-            {
-                DebugTB.Text = selectedItem;
-            }
 
             prototype.IsLpfEn = "LPF" == selectedItem;
             prototype.IsHpfEn = "HPF" == selectedItem;
@@ -1251,8 +1480,14 @@ namespace rf_tools
                 prototype.EnableBandwidth = false;
             }
 
+            if (filtLumpedTab != null)
+                filtLumpedTab.IsEnabled = true;
+
             if (filtCommLineTab != null)
                 filtCommLineTab.IsEnabled = prototype.IsLpfEn;
+
+            if (filtQuartWaveTab != null)
+                filtQuartWaveTab.IsEnabled = prototype.EnableBandwidth;
 
             if (filtSteppedTab != null)
                 filtSteppedTab.IsEnabled = prototype.IsLpfEn;
@@ -1289,10 +1524,10 @@ namespace rf_tools
 
             string selectedItem = comboObj.Content.ToString();
 
-            if (DebugTB != null)
-            {
-                DebugTB.Text = selectedItem;
-            }
+            if ("Series" == selectedItem)
+                prototype.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/SeriesFirstFilter.png", UriKind.Relative));
+            else
+                prototype.FiltImage = new BitmapImage(new Uri(@"/Images/Filters/ShuntFirstFilter.png", UriKind.Relative));
         }
 
         private void Filter_Order_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1303,44 +1538,49 @@ namespace rf_tools
             ComboBoxItem comboObj = (ComboBoxItem)e.AddedItems[0];
 
             string selectedItem = comboObj.Content.ToString();
-
-            if (DebugTB != null)
-            {
-                DebugTB.Text = selectedItem;
-            }
         }
 
         private void Help_Button_Click(object sender, RoutedEventArgs e)
         {
+            string filePath = Environment.CurrentDirectory;
+
+            System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\filter.html");
         }
 
-        private void RadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void RadioButton_Unchecked(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void Filter_SynthLumpedValues_Click(object sender, RoutedEventArgs e)
+        private void Filter_Synthesis_Click(object sender, RoutedEventArgs e)
         {
             Filter_GetProtoValues();
-            Filter_CalcLumped();
+
+            switch (filterTabCtrl.SelectedIndex)
+            {
+                case 1:
+                    Filter_CalcLumped();
+                    break;
+
+                case 2:
+                    Filter_CalcCommLine();
+                    break;
+
+                case 3:
+                    Filter_CalcQuartWave();
+                    break;
+
+                case 4:
+                    Filter_CalcStepped();
+                    break;
+
+                case 5:
+                    Filter_CoupledLine();
+                    break;
+
+                default:
+                    Filter_CalcQuartWave();
+                    break;
+            }
+
         }
 
-        private void Filter_SynthCommLineValues_Click(object sender, RoutedEventArgs e)
-        {
-            Filter_GetProtoValues();
-            Filter_CalcCommLine();
-        }
-
-        private void Filter_SynthSteppedValues_Click(object sender, RoutedEventArgs e)
-        {
-            Filter_GetProtoValues();
-            Filter_CalcStepped();
-        }
-
-        void timer_Tick(object sender, EventArgs e)
+        void Timer_Tick(object sender, EventArgs e)
         {
             UpdateFilterImages();
         }

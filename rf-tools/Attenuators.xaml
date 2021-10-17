@@ -69,7 +69,7 @@
         </Style>
     </Window.Resources>
 
-    <TabControl x:Name="attTabCtrl" TabStripPlacement="Left" Background="LightGray">
+    <TabControl x:Name="attTabCtrl" TabStripPlacement="Left" Background="LightGray" SelectionChanged="attTabCtrl_SelectionChanged">
         <TabControl.Resources>
             <Style TargetType="{x:Type TabItem}">
                 <Setter Property="Padding" Value="2" />
@@ -158,9 +158,9 @@
                 <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
                 
                 <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="atten_synthesis_click" />
+                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="atten_evaluate_click" />
+                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
             </Grid>
         </TabItem>
 
@@ -238,9 +238,9 @@
                 <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
                 
                 <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="atten_synthesis_click" />
+                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="atten_evaluate_click" />
+                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
             </Grid>
         </TabItem>
 
@@ -330,9 +330,9 @@
                 <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
 
                 <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="atten_synthesis_click" />
+                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="atten_evaluate_click" />
+                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
             </Grid>
         </TabItem>
 
@@ -411,9 +411,9 @@
                 <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
 
                 <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="atten_synthesis_click" />
+                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="atten_evaluate_click" />
+                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
             </Grid>
         </TabItem>
     </TabControl>

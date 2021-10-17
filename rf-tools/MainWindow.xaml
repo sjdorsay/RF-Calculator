@@ -56,7 +56,7 @@
             </Button>
         </WrapPanel>
 
-        <Label>Design</Label>
+        <Label>Design Tools</Label>
         <WrapPanel Orientation="Horizontal" Width="300">
             <Button Click="Button_TransmissionLine"  Background="SlateGray" >
                 <Image Source="Images/TransmissionLines/CoplanarWaveguide-Grounded.png" />

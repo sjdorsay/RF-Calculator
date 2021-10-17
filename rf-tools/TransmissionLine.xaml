@@ -87,7 +87,7 @@
         <!-- Microstrip -->
         <TabItem x:Name="tlineMSTab">
             <TabItem.Header>
-                <Image Source="Images/TransmissionLines/Microstrip.png" Height="32" Width="32" />
+                <Image Source="Images/TransmissionLines/Microstrip.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -230,7 +230,7 @@
         <!-- Stripline -->
         <TabItem x:Name="tlineSLTab">
             <TabItem.Header>
-                <Image Source="Images/TransmissionLines/Stripline.png" Height="32" Width="32" />
+                <Image Source="Images/TransmissionLines/Stripline.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -373,7 +373,7 @@
         <!-- Coplanar Waveguide -->
         <TabItem x:Name="tlineCPWTab">
             <TabItem.Header>
-                <Image Source="Images/TransmissionLines/CoplanarWaveguide.png" Height="32" Width="32" />
+                <Image Source="Images/TransmissionLines/CoplanarWaveguide.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -528,7 +528,7 @@
         <!-- Grounded Coplanar Waveguide -->
         <TabItem x:Name="tlineGCPWTab">
             <TabItem.Header>
-                <Image Source="Images/TransmissionLines/CoplanarWaveguide-Grounded.png" Height="32" Width="32" />
+                <Image Source="Images/TransmissionLines/CoplanarWaveguide-Grounded.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
@@ -683,7 +683,7 @@
         <!-- Substrate Integrated Waveguide -->
         <TabItem x:Name="tlineSIWTab">
             <TabItem.Header>
-                <Image Source="Images/TransmissionLines/SubstrateIntegratedWaveguide.png" Height="32" Width="32" />
+                <Image Source="Images/TransmissionLines/SubstrateIntegratedWaveguide.png" Height="50" Width="50" />
             </TabItem.Header>
 
             <Grid>
