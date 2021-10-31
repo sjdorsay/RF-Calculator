@@ -6,7 +6,6 @@ using iText.Layout.Element;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using Image = iText.Layout.Element.Image;
@@ -17,7 +16,6 @@ namespace rf_tools
     /* TO DO:
      * 1. Implement report generation
      * 2. Create help documentation
-     * 3. Implement help function
      */
 
     /** Dielectric Properties **/
@@ -231,24 +229,22 @@ namespace rf_tools
         {
             InitializeComponent();
 
-            DatabaseService dbService = new DatabaseService();
-            dbService.Set_Table("dielecitrc");
+            List<DielectricDbModel> dielList = DatabaseService.LoadData<DielectricDbModel>();
+            List<string> dielNameList = new List<string>();
 
-            DataTable dataTable = dbService.Get_Selected_Table();
-            List<string> dielList = new List<string>();
-
-            dielList.Add("Custom");
-
-            foreach (DataRow row in dataTable.Rows)
+            // Populate Name list
+            foreach (DielectricDbModel dielectric in dielList)
             {
-                dielList.Add(row.ItemArray[0].ToString());
+                dielNameList.Add(dielectric.Name);
             }
 
-            tline_ms_diel_cb.ItemsSource = dielList;
-            tline_sl_diel_cb.ItemsSource = dielList;
-            tline_cpw_diel_cb.ItemsSource = dielList;
-            tline_gcpw_diel_cb.ItemsSource = dielList;
-            tline_siw_diel_cb.ItemsSource = dielList;
+            dielNameList.Add("Custom");
+
+            tline_ms_diel_cb.ItemsSource = dielNameList;
+            tline_sl_diel_cb.ItemsSource = dielNameList;
+            tline_cpw_diel_cb.ItemsSource = dielNameList;
+            tline_gcpw_diel_cb.ItemsSource = dielNameList;
+            tline_siw_diel_cb.ItemsSource = dielNameList;
 
             tlineMSTab.DataContext = ms_params;
             tlineSLTab.DataContext = sl_params;
@@ -786,8 +782,8 @@ namespace rf_tools
             if (tlineRunSynthesis)
             {
                 // Gather Synthesis specific inputs
-                impedance = gcpw_params.SysProp.Impedance;
-                theta = Convert_To_Internal_Units(gcpw_params.SysProp.Theta, gcpw_params.SysProp.ThetaUnits);
+                gcpw_params.SysProp.Impedance = gcpw_params.SysProp.Impedance;
+                gcpw_params.SysProp.Theta = Convert_To_Internal_Units(gcpw_params.SysProp.Theta, gcpw_params.SysProp.ThetaUnits);
 
             }
 
@@ -834,9 +830,9 @@ namespace rf_tools
         {
             // Gather physical constants
             double speedOfLight = 299792458;
-            double rho_cu = 1.68 * Math.Pow(10, -8);
-            double permeability = 4 * Math.PI * Math.Pow(10, -7);
-            double permitivityEff = 1;
+            //double rho_cu = 1.68 * Math.Pow(10, -8);
+            //double permeability = 4 * Math.PI * Math.Pow(10, -7);
+            double permitivityEff;
 
             // Initialize variables
             double propDelay;
@@ -860,8 +856,8 @@ namespace rf_tools
             if (tlineRunSynthesis)
             {
                 // Gather Synthesis specific inputs
-                impedance = cpw_params.SysProp.Impedance;
-                theta = Convert_To_Internal_Units(cpw_params.SysProp.Theta, cpw_params.SysProp.ThetaUnits);
+                cpw_params.SysProp.Impedance = cpw_params.SysProp.Impedance;
+                cpw_params.SysProp.Theta = Convert_To_Internal_Units(cpw_params.SysProp.Theta, cpw_params.SysProp.ThetaUnits);
 
             }
 
@@ -1023,21 +1019,6 @@ namespace rf_tools
             return (scale * val);
         }
 
-        /** Extract Value from String **/
-        private double Extract_Value(string inputs)
-        {
-            string temps;
-
-            temps = inputs;
-
-            temps = temps.Replace(" ", "");
-            temps = temps.Replace("\\", "");
-
-            double.TryParse(temps, out double outVal);
-
-            return outVal;
-        }
-
         /** Double Factorial **/
         private double Double_Factorial(double val)
         {
@@ -1182,7 +1163,7 @@ namespace rf_tools
             if (sender.GetType() != typeof(ComboBox))
                 return;
 
-            string name = "Custom";
+            string name = "";
             double permitivity = 0;
             double tand = 0;
             double cte = 0;
@@ -1226,31 +1207,29 @@ namespace rf_tools
             }
 
             // If custom dielectric then enable editing
-            if (name == selectedItem)
+            if ("Custom" == selectedItem)
             {
                 // Do Nothing - Data will be updated from text box
                 temp.DielProp.IsCustom = true;
                 return;
             }
 
-            DatabaseService dbService = new DatabaseService();
-            dbService.Set_Table("dielecitrc");
-
-            DataTable dataTable = dbService.Get_Selected_Table();
+            // Import dielectric list from database
+            List<DielectricDbModel> dielList = DatabaseService.LoadData<DielectricDbModel>();
 
             // Dielectric Permitivity
-            foreach (DataRow row in dataTable.Rows)
+            foreach (DielectricDbModel currDiel in dielList)
             {
-                if (selectedItem == row.ItemArray[0].ToString())
+                if (selectedItem == currDiel.Name)
                 {
-                    name = row.ItemArray[0].ToString();
-                    permitivity = Extract_Value(row.ItemArray[1].ToString());
-                    tand = Extract_Value(row.ItemArray[2].ToString());
-                    cte = Extract_Value(row.ItemArray[3].ToString());
+                    name = currDiel.Name;
+                    permitivity = currDiel.Permitivity;
+                    tand = currDiel.TanD;
+                    cte = currDiel.CTE;
                 }
             }
 
-            // Assign the permitivity value
+            // Assign the dielectric values
             temp.DielProp.Name = name;
             temp.DielProp.Permitivity = permitivity;
             temp.DielProp.TanD = tand;

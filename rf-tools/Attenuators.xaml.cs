@@ -1,11 +1,9 @@
-﻿using iText.IO.Image;
-using iText.Kernel.Pdf;
+﻿using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
 using System;
 using System.ComponentModel;
 using System.Windows;
-using Image = iText.Layout.Element.Image;
 using TextAlignment = iText.Layout.Properties.TextAlignment;
 
 // iText7 PDF .NET Module
@@ -23,6 +21,15 @@ namespace rf_tools
 
         private double attenuation;
         private double tolerance;
+
+        private bool genReport;
+
+        public bool GenReport
+        {
+            get { return genReport; }
+            set { genReport = value; NotifyPropertyChanged("GenReport"); }
+        }
+
 
         public double Res1
         {
@@ -81,8 +88,6 @@ namespace rf_tools
     {
         private bool attenRunSynthesis = false;
         private bool attenRunEvaluate = false;
-
-        private bool genReport = false;
 
         readonly AttenuatorParameters pi_atten = new AttenuatorParameters();
         readonly AttenuatorParameters tee_atten = new AttenuatorParameters();
@@ -161,10 +166,10 @@ namespace rf_tools
             double atten;
             double[] ABCD = new double[4];
 
-            ABCD[0] = 1 + (r2 / r1);
+            ABCD[0] = 1 + (r2 / r3);
             ABCD[1] = r2;
             ABCD[3] = 1 + (r2 / r1);
-            ABCD[2] = (ABCD[3] + 1) / r1;
+            ABCD[2] = (1 / r1) + ABCD[3] * (1 / r3);
 
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
@@ -180,10 +185,10 @@ namespace rf_tools
             double imped;
             double[] ABCD = new double[4];
 
-            ABCD[0] = 1 + (r2 / r1);
+            ABCD[0] = 1 + (r2 / r3);
             ABCD[1] = r2;
             ABCD[3] = 1 + (r2 / r1);
-            ABCD[2] = (ABCD[3] + 1) / r1;
+            ABCD[2] = (1 / r1) + ABCD[3] * (1 / r3);
 
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
@@ -200,6 +205,8 @@ namespace rf_tools
             double a;
             double imped;
             double tol;
+
+            bool genReport = pi_atten.GenReport;
 
             if (attenRunSynthesis)
             {
@@ -222,8 +229,8 @@ namespace rf_tools
                 r1 = pi_atten.Res1;
                 r2 = pi_atten.Res2;
 
-                pi_atten.Attenuation = Atten_PI_GetAttenuation(r1, r2, r2);
-                pi_atten.Impedance = Atten_PI_GetImpedance(r1, r2, r2);
+                pi_atten.Attenuation = Atten_PI_GetAttenuation(r1, r2, r1);
+                pi_atten.Impedance = Atten_PI_GetImpedance(r1, r2, r1);
             }
 
             if (genReport)
@@ -240,25 +247,25 @@ namespace rf_tools
                 impedance[1] = pi_atten.Impedance;
                 impedance[2] = pi_atten.Impedance;
 
-                tol = pi_atten.Tolerance/100;
+                tol = pi_atten.Tolerance / 100;
 
                 double tempAtten;
                 double tempImpedance;
 
+                int Ntot = 8;
+
                 // Find the maximum and minimum attenuation and impedance
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < Ntot; i++)
                 {
                     tempAtten = Atten_PI_GetAttenuation(
                         r1 * (1 + (2 * (1 & i) - 1) * tol),
                         r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r2 * (1 + (2 * (4 & i) - 1) * tol)
-                        );
-                    
+                        r1 * (1 + (2 * (4 & i) - 1) * tol));
+
                     tempImpedance = Atten_PI_GetImpedance(
                         r1 * (1 + (2 * (1 & i) - 1) * tol),
                         r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r2 * (1 + (2 * (4 & i) - 1) * tol)
-                        );
+                        r1 * (1 + (2 * (4 & i) - 1) * tol));
 
                     if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
                     if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
@@ -267,7 +274,7 @@ namespace rf_tools
                     if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
                 }
 
-                Gen_Report(attenuation, impedance);
+                Gen_Report(attenuation, impedance, new double[] { r1, r2, r1 });
             }
         }
 
@@ -280,9 +287,9 @@ namespace rf_tools
             double[] ABCD = new double[4];
 
             ABCD[0] = 1 + (r1 / r2);
-            ABCD[1] = r1 * (ABCD[0] + 1);
+            ABCD[1] = r1 + r3 * ABCD[0];
             ABCD[2] = 1 / r2;
-            ABCD[3] = 1 + (r1 / r2);
+            ABCD[3] = 1 + (r3 / r2);
 
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
@@ -292,16 +299,16 @@ namespace rf_tools
             return atten;
         }
 
-        /** Calculate Input Impedanceof Tee Attenuator **/
+        /** Calculate Input Impedance of Tee Attenuator **/
         private double Atten_TEE_GetImpedance(double r1, double r2, double r3)
         {
             double imped;
             double[] ABCD = new double[4];
 
             ABCD[0] = 1 + (r1 / r2);
-            ABCD[1] = r1 * (ABCD[0] + 1);
+            ABCD[1] = r1 + r3 * ABCD[0];
             ABCD[2] = 1 / r2;
-            ABCD[3] = 1 + (r1 / r2);
+            ABCD[3] = 1 + (r3 / r2);
 
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
@@ -318,6 +325,8 @@ namespace rf_tools
             double a;
             double imped;
             double tol;
+
+            bool genReport = tee_atten.GenReport;
 
             if (attenRunSynthesis)
             {
@@ -347,7 +356,46 @@ namespace rf_tools
 
             if (genReport)
             {
+                double[] attenuation = new double[3];
 
+                attenuation[0] = tee_atten.Attenuation;
+                attenuation[1] = tee_atten.Attenuation;
+                attenuation[2] = tee_atten.Attenuation;
+
+                double[] impedance = new double[3];
+
+                impedance[0] = tee_atten.Impedance;
+                impedance[1] = tee_atten.Impedance;
+                impedance[2] = tee_atten.Impedance;
+
+                tol = tee_atten.Tolerance / 100;
+
+                double tempAtten;
+                double tempImpedance;
+
+                int Ntot = 8;
+
+                // Find the maximum and minimum attenuation and impedance
+                for (int i = 0; i < Ntot; i++)
+                {
+                    tempAtten = Atten_TEE_GetAttenuation(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r1 * (1 + (2 * (4 & i) - 1) * tol));
+
+                    tempImpedance = Atten_TEE_GetImpedance(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r1 * (1 + (2 * (4 & i) - 1) * tol));
+
+                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
+                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
+
+                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
+                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
+                }
+
+                Gen_Report(attenuation, impedance, new double[] { r1, r2, r1 });
             }
         }
 
@@ -414,6 +462,8 @@ namespace rf_tools
             double imped;
             double tol;
 
+            bool genReport = btee_atten.GenReport;
+
             if (attenRunSynthesis)
             {
                 a = Math.Pow(10, btee_atten.Attenuation / 20);
@@ -449,7 +499,48 @@ namespace rf_tools
 
             if (genReport)
             {
+                double[] attenuation = new double[4];
 
+                attenuation[0] = btee_atten.Attenuation;
+                attenuation[1] = btee_atten.Attenuation;
+                attenuation[2] = btee_atten.Attenuation;
+
+                double[] impedance = new double[4];
+
+                impedance[0] = btee_atten.Impedance;
+                impedance[1] = btee_atten.Impedance;
+                impedance[2] = btee_atten.Impedance;
+
+                tol = btee_atten.Tolerance / 100;
+
+                double tempAtten;
+                double tempImpedance;
+
+                int Ntot = 16;
+
+                // Find the maximum and minimum attenuation and impedance
+                for (int i = 0; i < Ntot; i++)
+                {
+                    tempAtten = Atten_BTEE_GetAttenuation(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r3 * (1 + (2 * (4 & i) - 1) * tol),
+                        r4 * (1 + (2 * (8 & i) - 1) * tol));
+
+                    tempImpedance = Atten_BTEE_GetImpedance(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol),
+                        r3 * (1 + (2 * (4 & i) - 1) * tol),
+                        r4 * (1 + (2 * (8 & i) - 1) * tol));
+
+                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
+                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
+
+                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
+                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
+                }
+
+                Gen_Report(attenuation, impedance, new double[] { r1, r2, r3, r4 });
             }
         }
 
@@ -487,6 +578,8 @@ namespace rf_tools
             double imped;
             double tol;
 
+            bool genReport = refl_atten.GenReport;
+
             if (attenRunSynthesis)
             {
                 a = Math.Pow(10, refl_atten.Attenuation / 20);
@@ -513,13 +606,51 @@ namespace rf_tools
                 refl_atten.Impedance = Atten_Refl_GetImpedance(r1, r2); ;
             }
 
-            if(genReport)
+            if (genReport)
             {
+                double[] attenuation = new double[4];
 
+                attenuation[0] = refl_atten.Attenuation;
+                attenuation[1] = refl_atten.Attenuation;
+                attenuation[2] = refl_atten.Attenuation;
+
+                double[] impedance = new double[4];
+
+                impedance[0] = refl_atten.Impedance;
+                impedance[1] = refl_atten.Impedance;
+                impedance[2] = refl_atten.Impedance;
+
+                tol = refl_atten.Tolerance / 100;
+
+                double tempAtten;
+                double tempImpedance;
+
+                int Ntot = 2 ^ attenuation.Length;
+
+                // Find the maximum and minimum attenuation and impedance
+                for (int i = 0; i < Ntot; i++)
+                {
+                    tempAtten = Atten_Refl_GetAttenuation(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol));
+
+                    tempImpedance = Atten_Refl_GetImpedance(
+                        r1 * (1 + (2 * (1 & i) - 1) * tol),
+                        r2 * (1 + (2 * (2 & i) - 1) * tol));
+
+                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
+                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
+
+                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
+                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
+                }
+
+                Gen_Report(attenuation, impedance, new double[] { r1, r2 });
             }
         }
 
-        private void Gen_Report(double[] atten, double[] imped)
+        /** Report Generation Function **/
+        private void Gen_Report(double[] atten, double[] imped, double[] resList)
         {
             // Get path to user documents assuming C drive
             string UserName = Environment.UserName;
@@ -529,6 +660,9 @@ namespace rf_tools
             PdfWriter writer = new PdfWriter(DocuPath + "Attenuator_Report.pdf");
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
+
+            double a = Math.Pow(10, atten[1] / 20);
+            double maxPwr = 18 + 10 * (2.647 / (2.647 + a));
 
             /** Setup Document Formats **/
             // Setup Title formatting
@@ -550,12 +684,11 @@ namespace rf_tools
             // Add title
             document.Add(title);
 
-            // Section 1 - Material Properties
-            header.Add("1. Attenuation");
+            // Section 1 - Attenuator
+            header.Add("1. Attenuator");
 
-            body.Add("min_atten = " + atten[0] + " dB\n");
-            body.Add("typ_atten = " + atten[1] + " dB\n");
-            body.Add("max_atten = " + atten[2] + " dB\n");
+            for (int i = 0; i < resList.Length; i++)
+                body.Add(string.Format("R{0} = {1} Ohm\n", i + 1, resList[i]));
 
             // Add section header and body to document
             document.Add(header);
@@ -565,12 +698,41 @@ namespace rf_tools
             header.GetChildren().Clear();
             body.GetChildren().Clear();
 
-            // Section 1 - Impedance Properties
-            header.Add("2. Impedance");
+            // Section 2 - Attenuation
+            header.Add("2. Attenuation");
 
-            body.Add("min_imped = " + imped[0] + " Ohm\n");
-            body.Add("typ_imped = " + imped[1] + " Ohm\n");
-            body.Add("max_imped = " + imped[2] + " Ohm\n");
+            body.Add("Minimum: " + atten[0] + " dB\n");
+            body.Add("Nominal: " + atten[1] + " dB\n");
+            body.Add("Maximum: " + atten[2] + " dB\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 3 - Impedance Properties
+            header.Add("3. Impedance");
+
+            body.Add("Minimum: " + imped[0] + " Ohm\n");
+            body.Add("Nominal: " + imped[1] + " Ohm\n");
+            body.Add("Maximum: " + imped[2] + " Ohm\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 4 - Power Handling
+            header.Add("4. Power Handling");
+
+            body.Add("Maximum: " + maxPwr + " dBm\n");
+            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W\n");
 
             // Add section header and body to document
             document.Add(header);
@@ -668,19 +830,71 @@ namespace rf_tools
         /** Report Generation Checkbox Handler **/
         private void RadioButton_Checked(object sender, RoutedEventArgs e)
         {
-            genReport = true;
+            bool genReport = true;
+
+            // Enable report generation
+            switch (attTabCtrl.SelectedIndex)
+            {
+                /**Tab 0: PI Attenuator**/
+                case 0:
+                    pi_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 1: Tee Attenuator**/
+                case 1:
+                    tee_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 2: Bridged Tee Attenuator**/
+                case 2:
+                    btee_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 3: Reflection Attenuator**/
+                case 3:
+                    refl_atten.GenReport = genReport;
+                    break;
+
+                /**Default: PI Attenuator**/
+                default:
+                    pi_atten.GenReport = genReport;
+                    break;
+            }
         }
 
         /** Report Generation Checkbox Handler **/
         private void RadioButton_Unchecked(object sender, RoutedEventArgs e)
         {
-            genReport = false;
-        }
+            bool genReport = false;
 
-        /** Tab Selection Selection Change Handler **/
-        private void attTabCtrl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            genReport = false;
+            // Disable report generation
+            switch (attTabCtrl.SelectedIndex)
+            {
+                /**Tab 0: PI Attenuator**/
+                case 0:
+                    pi_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 1: Tee Attenuator**/
+                case 1:
+                    tee_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 2: Bridged Tee Attenuator**/
+                case 2:
+                    btee_atten.GenReport = genReport;
+                    break;
+
+                /**Tab 3: Reflection Attenuator**/
+                case 3:
+                    refl_atten.GenReport = genReport;
+                    break;
+
+                /**Default: PI Attenuator**/
+                default:
+                    pi_atten.GenReport = genReport;
+                    break;
+            }
         }
     }
 }

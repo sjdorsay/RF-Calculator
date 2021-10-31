@@ -286,7 +286,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Margin="10 5" Background="LightGray" Text="{Binding Path=CompString, Mode=OneWay}" />
+                    <TextBox Margin="10 5" Background="LightGray" Text="{Binding Path=OutputString, Mode=OneWay}" />
                 </StackPanel>
 
                 <!-- Row 5 -->
@@ -318,7 +318,7 @@
                 <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
+                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Filters/Commensurate/Commensurate_LPF.png" />
 
                 <!-- Row 3 -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
@@ -346,7 +346,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
+                    <TextBox Text="{Binding Path=OutputString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
                 </StackPanel>
 
                 <!-- Row 5 -->
@@ -388,7 +388,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
+                    <TextBox Text="{Binding Path=OutputString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
                 </StackPanel>
 
                 <!-- Row 5 -->
@@ -440,7 +440,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}" Margin="10 5" Background="LightGray" />
+                    <TextBox Text="{Binding Path=OutputString, Mode=OneWay}" Margin="10 5" Background="LightGray" />
                 </StackPanel>
 
                 <!-- Row 5 -->
@@ -472,7 +472,7 @@
                 <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
+                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Filters/CoupledLine/CoupledLine_BPF.png" />
 
                 <!-- Row 3 -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
@@ -482,7 +482,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
                     <Label Style="{StaticResource Header}" Margin="5 0" Content="Values" />
 
-                    <TextBox Text="{Binding Path=TLineString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
+                    <TextBox Text="{Binding Path=OutputString, Mode=OneWay}"  Margin="10 5" Background="LightGray" />
                 </StackPanel>
 
                 <!-- Row 5 -->

@@ -203,11 +203,41 @@ namespace rf_tools
         }
     }
 
-    public class LumpedFilterParams : INotifyPropertyChanged
+    public class FilterParamBase : INotifyPropertyChanged
     {
-        private string compString;
+        private string outputString;
         private BitmapImage filtImage;
 
+        public string OutputString
+        {
+            get { return outputString; }
+            set
+            {
+                outputString = value;
+                NotifyPropertyChanged("OutputString");
+            }
+        }
+
+        public BitmapImage FiltImage
+        {
+            get { return filtImage; }
+            set
+            {
+                filtImage = value;
+                NotifyPropertyChanged("FiltImage");
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+    }
+
+    public class LumpedFilterParams : FilterParamBase
+    {
         public string Ideal { get; set; }
 
         public double MinCap { get; set; }
@@ -217,149 +247,26 @@ namespace rf_tools
         public double MinInd { get; set; }
         public string IndUnit { get; set; }
         public double IndTol { get; set; }
-
-        public string CompString
-        {
-            get { return compString; }
-            set
-            {
-                compString = value;
-                NotifyPropertyChanged("CompString");
-            }
-        }
-
-        public BitmapImage FiltImage
-        {
-            get { return filtImage; }
-            set
-            {
-                filtImage = value;
-                NotifyPropertyChanged("FiltImage");
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
-    public class CommLineFilterParams : INotifyPropertyChanged
+    public class CommLineFilterParams : FilterParamBase
     {
-        private string tLineString;
-
         public double MinImpedance { get; set; }
         public double MaxImpedance { get; set; }
-
-        public string TLineString
-        {
-            get { return tLineString; }
-            set
-            {
-                tLineString = value;
-                NotifyPropertyChanged("TLineString");
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
-    public class SteppedFilterParams : INotifyPropertyChanged
+    public class SteppedFilterParams : FilterParamBase
     {
-        private string tLineString;
-        private BitmapImage filtImage;
-
         public double LowImpedance { get; set; }
         public double HighImpedance { get; set; }
-
-        public string TLineString
-        {
-            get { return tLineString; }
-            set
-            {
-                tLineString = value;
-                NotifyPropertyChanged("TLineString");
-            }
-        }
-
-        public BitmapImage FiltImage
-        {
-            get { return filtImage; }
-            set
-            {
-                filtImage = value;
-                NotifyPropertyChanged("FiltImage");
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
-    public class QuartWaveFilterParams : INotifyPropertyChanged
+    public class QuartWaveFilterParams : FilterParamBase
     {
-        private string tLineString;
-        private BitmapImage filtImage;
-
-        public string TLineString
-        {
-            get { return tLineString; }
-            set
-            {
-                tLineString = value;
-                NotifyPropertyChanged("TLineString");
-            }
-        }
-
-        public BitmapImage FiltImage
-        {
-            get { return filtImage; }
-            set
-            {
-                filtImage = value;
-                NotifyPropertyChanged("FiltImage");
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
-    public class CoupledLineParams : INotifyPropertyChanged
+    public class CoupledLineParams : FilterParamBase
     {
-        private string tLineString;
-
-        public string TLineString
-        {
-            get { return tLineString; }
-            set
-            {
-                tLineString = value;
-                NotifyPropertyChanged("TLineString");
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
 
@@ -894,7 +801,7 @@ namespace rf_tools
 
             bool toggle = false;
 
-            lumpedParams.CompString = "Component Values\n";
+            lumpedParams.OutputString = "Component Values\n";
 
             switch (prototype.Type)
             {
@@ -926,7 +833,7 @@ namespace rf_tools
                                 filtVals[i] = tempL;
                             }
 
-                            lumpedParams.CompString += string.Format("L{0} = {1}H\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
+                            lumpedParams.OutputString += string.Format("L{0} = {1}H\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
                         }
                         else
                         {
@@ -944,7 +851,7 @@ namespace rf_tools
                                 filtVals[i] = tempC;
                             }
 
-                            lumpedParams.CompString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
+                            lumpedParams.OutputString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
                         }
 
                         toggle = !toggle;
@@ -978,7 +885,7 @@ namespace rf_tools
                                 filtVals[i] = tempC;
                             }
 
-                            lumpedParams.CompString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
+                            lumpedParams.OutputString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
                         }
                         else
                         {
@@ -996,7 +903,7 @@ namespace rf_tools
                                 filtVals[i] = tempC;
                             }
 
-                            lumpedParams.CompString += string.Format("L{0} = {1}H\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
+                            lumpedParams.OutputString += string.Format("L{0} = {1}H\n", i + 1, ConvertToEngineeringUnits(filtVals[i]));
                         }
 
                         toggle = !toggle;
@@ -1059,8 +966,8 @@ namespace rf_tools
                         filtVals[2 * i] *= impedance;
                         filtVals[2 * i + 1] /= impedance;
 
-                        lumpedParams.CompString += string.Format("L{0} = {1}H, ", i + 1, ConvertToEngineeringUnits(filtVals[2 * i]));
-                        lumpedParams.CompString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[2 * i + 1]));
+                        lumpedParams.OutputString += string.Format("L{0} = {1}H, ", i + 1, ConvertToEngineeringUnits(filtVals[2 * i]));
+                        lumpedParams.OutputString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[2 * i + 1]));
 
                         // Toggle between series and shunt component
                         toggle = !toggle;
@@ -1123,8 +1030,8 @@ namespace rf_tools
                         filtVals[2 * i] *= impedance;
                         filtVals[2 * i + 1] /= impedance;
 
-                        lumpedParams.CompString += string.Format("L{0} = {1}H, ", i + 1, ConvertToEngineeringUnits(filtVals[2 * i]));
-                        lumpedParams.CompString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[2 * i + 1]));
+                        lumpedParams.OutputString += string.Format("L{0} = {1}H, ", i + 1, ConvertToEngineeringUnits(filtVals[2 * i]));
+                        lumpedParams.OutputString += string.Format("C{0} = {1}F\n", i + 1, ConvertToEngineeringUnits(filtVals[2 * i + 1]));
 
                         // Toggle between series and shunt component
                         toggle = !toggle;
@@ -1272,15 +1179,15 @@ namespace rf_tools
                 toggle = !toggle;
             }
 
-            commParams.TLineString = "Transmission Line Values\n";
+            commParams.OutputString = "Transmission Line Values\n";
 
             // Create output report for TLine values
             for (int i = 0; i < NTlines; i++)
             {
-                commParams.TLineString += string.Format(
-                    "TL{0} = {1} Ohm, {2} deg\n", 
-                    i + 1, 
-                    Math.Round(impedVals[i], 2), 
+                commParams.OutputString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n",
+                    i + 1,
+                    Math.Round(impedVals[i], 2),
                     angleVals[i]);
             }
         }
@@ -1326,12 +1233,12 @@ namespace rf_tools
                 toggle = !toggle;
             }
 
-            steppedParams.TLineString = "Transmission Line Values\n";
+            steppedParams.OutputString = "Transmission Line Values\n";
 
             // Create output report for TLine values
             for (int i = 0; i < order; i++)
             {
-                steppedParams.TLineString += string.Format(
+                steppedParams.OutputString += string.Format(
                     "TL{0} = {1} Ohm, {2} deg\n",
                     i + 1,
                     Math.Round(impedVals[i], 2),
@@ -1376,28 +1283,28 @@ namespace rf_tools
                 }
             }
 
-            quartWaveParams.TLineString = "Transmission Line Values\n";
-            quartWaveParams.TLineString += string.Format("TL{0} = {1} Ohm, {2} deg\n",
+            quartWaveParams.OutputString = "Transmission Line Values\n";
+            quartWaveParams.OutputString += string.Format("TL{0} = {1} Ohm, {2} deg\n",
                 1,
                 Math.Round(impedVals[0], 2),
                 Math.Round(angleVals[0], 2));
 
             for (int i = 1; i < NTlines; i++)
             {
-                quartWaveParams.TLineString += string.Format(
-                    "TL{0} = {1} Ohm, {2} deg\n", 
-                    2 * i, 
-                    Math.Round(impedance, 2), 
+                quartWaveParams.OutputString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n",
+                    2 * i,
+                    Math.Round(impedance, 2),
                     Math.Round(90.0, 2));
 
-                quartWaveParams.TLineString += string.Format(
-                    "TL{0} = {1} Ohm, {2} deg\n", 
-                    2 * i + 1, 
-                    Math.Round(impedVals[i], 2), 
+                quartWaveParams.OutputString += string.Format(
+                    "TL{0} = {1} Ohm, {2} deg\n",
+                    2 * i + 1,
+                    Math.Round(impedVals[i], 2),
                     Math.Round(angleVals[i], 2));
             }
         }
-        
+
         // Coupled Line Filter (BPF only)
         private void Filter_CoupledLine()
         {
@@ -1442,11 +1349,11 @@ namespace rf_tools
             evenImpedance[order] = impedance * (1 + conv + Math.Pow(conv, 2));
             oddImpedance[order] = impedance * (1 - conv + Math.Pow(conv, 2));
 
-            coupledLineParams.TLineString = "Transmission Line Values\n";
+            coupledLineParams.OutputString = "Transmission Line Values\n";
 
             for (int i = 0; i < order + 1; i++)
             {
-                coupledLineParams.TLineString += string.Format(
+                coupledLineParams.OutputString += string.Format(
                     "Z{0} even = {1} Ohm, Z{0} odd = {2} Ohm\n",
                     i + 1,
                     Math.Round(evenImpedance[i], 2),
@@ -1493,7 +1400,7 @@ namespace rf_tools
                 filtSteppedTab.IsEnabled = prototype.IsLpfEn;
 
             if (filtCoupLineTab != null)
-                filtCoupLineTab.IsEnabled = prototype.EnableBandwidth;
+                filtCoupLineTab.IsEnabled = prototype.IsBpfEn;
         }
 
         private void Filter_Arch_SelectionChanged(object sender, SelectionChangedEventArgs e)

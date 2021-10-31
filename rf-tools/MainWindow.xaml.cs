@@ -44,7 +44,7 @@ namespace rf_tools
 
         private void Button_Library(object sender, RoutedEventArgs e)
         {
-            var libWindow = new library();
+            var libWindow = new Library();
             libWindow.ShowDialog();
         }
     }
