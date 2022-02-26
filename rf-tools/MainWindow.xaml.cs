@@ -38,8 +38,14 @@ namespace rf_tools
 
         private void Button_PowerDivider(object sender, RoutedEventArgs e)
         {
-            var powDividerWindow = new PowerDivider();
+            var powDividerWindow = new PowerDividers();
             powDividerWindow.ShowDialog();
+        }
+
+        private void Button_Intermodulation(object sender, RoutedEventArgs e)
+        {
+            var intermodWindow = new Intermods();
+            intermodWindow.ShowDialog();
         }
 
         private void Button_Library(object sender, RoutedEventArgs e)

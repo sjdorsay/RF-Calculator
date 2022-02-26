@@ -69,7 +69,19 @@
         </Style>
     </Window.Resources>
 
-    <TabControl x:Name="attTabCtrl" TabStripPlacement="Left" Background="LightGray" >
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Export">
+                    <MenuItem Header="_Report" IsCheckable="True" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" />
+                    <MenuItem Header="_LTSpice" Click="Export_LTSpice" />
+                </MenuItem>
+            </MenuItem>
+
+            <MenuItem Header="Help" Click="Help_Button_Click"/>
+        </Menu>
+        
+        <TabControl x:Name="attTabCtrl" TabStripPlacement="Left" Background="LightGray" >
         <TabControl.Resources>
             <Style TargetType="{x:Type TabItem}">
                 <Setter Property="Padding" Value="2" />
@@ -83,7 +95,7 @@
                 </Setter>
             </Style>
         </TabControl.Resources>
-
+        
         <!-- PI Attenuator -->
         <TabItem x:Name="attPiTab">
             <TabItem.Header>
@@ -106,7 +118,6 @@
                 </Grid.RowDefinitions>
 
                 <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
                 <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/PiAttenuator-Dimensions.png" />
@@ -155,7 +166,6 @@
                 </StackPanel>
 
                 <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
                 
                 <!-- Row 5 -->
                 <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
@@ -186,7 +196,6 @@
                 </Grid.RowDefinitions>
 
                 <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
                 <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
@@ -235,7 +244,6 @@
                 </StackPanel>
 
                 <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
                 
                 <!-- Row 5 -->
                 <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
@@ -266,7 +274,6 @@
                 </Grid.RowDefinitions>
 
                 <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                 <!-- Row 2 -->
                 <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/BridgedTeeAttenuator-Dimensions.png" />
@@ -327,7 +334,6 @@
                 </StackPanel>
 
                 <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
 
                 <!-- Row 5 -->
                 <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
@@ -408,7 +414,6 @@
                 </StackPanel>
 
                 <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
 
                 <!-- Row 5 -->
                 <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
@@ -417,4 +422,5 @@
             </Grid>
         </TabItem>
     </TabControl>
+    </DockPanel>
 </Window>

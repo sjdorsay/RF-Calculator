@@ -1,5 +1,5 @@
-﻿using iText.IO.Image;
-// iText7 PDF .NET Module
+﻿// iText7 PDF .NET Module
+using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using iText.Layout.Element;
@@ -729,8 +729,8 @@ namespace rf_tools
                 header.GetChildren().Clear();
                 body.GetChildren().Clear();
 
-                // Section 4 - Microstrip Losses
-                header.Add("4. Microstrip Losses");
+                // Section 4 - Stripline Losses
+                header.Add("4. Stripline Losses");
 
                 body.Add("alpha_d = " +
                     Convert_To_Internal_Units(alpha_d, sl_params.LengthUnits) +
@@ -756,14 +756,14 @@ namespace rf_tools
         {
             // Gather physical constants
             double speedOfLight = 299792458;
-            //double rho_cu = 1.68 * Math.Pow(10, -8);
-            //double permeability = 4 * Math.PI * Math.Pow(10, -7);
-            double permitivityEff;
+            double rho_cu = 1.68 * Math.Pow(10, -8);
+            double permeability = 4 * Math.PI * Math.Pow(10, -7);
+            double permitivityEff = 1;
 
-            // Initialize variables
-            double propDelay;
-            double wavelength;
-            double beta;
+            // Initialize variables - arbitrarily select 3GHz
+            double propDelay = speedOfLight;
+            double wavelength = speedOfLight / 3e9;
+            double beta = 2 * Math.PI / wavelength;
 
             // Unitless Values
             double permitivityRel = gcpw_params.DielProp.Permitivity;
@@ -773,18 +773,21 @@ namespace rf_tools
             double frequency = Convert_To_Internal_Units(gcpw_params.SysProp.Frequency, gcpw_params.SysProp.FrequencyUnits);
 
             // Initialize Input/Output Variables
-            double width;
-            double length;
-            double gap;
-            double impedance;
-            double theta;
+            double width = 0;
+            double length = 0;
+            double gap = 0;
+            double impedance = 50;
+            double theta = 90;
 
             if (tlineRunSynthesis)
             {
                 // Gather Synthesis specific inputs
-                gcpw_params.SysProp.Impedance = gcpw_params.SysProp.Impedance;
-                gcpw_params.SysProp.Theta = Convert_To_Internal_Units(gcpw_params.SysProp.Theta, gcpw_params.SysProp.ThetaUnits);
+                impedance = gcpw_params.SysProp.Impedance = gcpw_params.SysProp.Impedance;
+                theta = gcpw_params.SysProp.Theta = Convert_To_Internal_Units(gcpw_params.SysProp.Theta, gcpw_params.SysProp.ThetaUnits);
 
+                // Prevent divide by 0
+                width = 1;
+                length = 1;
             }
 
             if (tlineRunEvaluate)
@@ -801,6 +804,7 @@ namespace rf_tools
                 k1 /= Math.Tanh(Math.PI * (width + 2 * gap) / (4 * height));
                 double k1p = Math.Sqrt(1 - Math.Pow(k1, 2));
 
+                // Complete Elliptic Integral of the First Kind
                 double Kr0 = CEI_First(k0) / CEI_First(k0p);
                 double Kr1 = CEI_First(k1) / CEI_First(k1p);
 
@@ -822,6 +826,157 @@ namespace rf_tools
 
                 // Electrical Angle
                 gcpw_params.SysProp.Theta = Convert_To_External_Units(theta, gcpw_params.SysProp.ThetaUnits);
+            }
+
+            if (genReport)
+            {
+                double alpha_d;
+                double alpha_c;
+
+                alpha_d = beta * gcpw_params.DielProp.TanD / 2;
+                alpha_d *= 20 * Math.Log10(Math.E);
+
+                alpha_c = Math.Sqrt(Math.PI * frequency * rho_cu * permeability);
+                alpha_c /= impedance * width;
+                alpha_c *= 20 * Math.Log10(Math.E);
+
+                // Get path to user documents assuming C drive
+                string UserName = Environment.UserName;
+                string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+
+                // Must have write permissions to the path folder
+                PdfWriter writer = new PdfWriter(DocuPath + "GCPW_Report.pdf");
+                PdfDocument pdf = new PdfDocument(writer);
+                Document document = new Document(pdf);
+
+                /** Setup Document Formats **/
+                // Setup Title formatting
+                Paragraph title = new Paragraph("GCPW Report")
+                   .SetTextAlignment(TextAlignment.CENTER)
+                   .SetFontSize(24);
+
+                // Setup Header formatting
+                Paragraph header = new Paragraph()
+                   .SetTextAlignment(TextAlignment.LEFT)
+                   .SetFontSize(16);
+
+                // Setup body formatting
+                Paragraph body = new Paragraph()
+                   .SetTextAlignment(TextAlignment.LEFT)
+                   .SetFontSize(12);
+
+                /** Generature Document **/
+                // Add title
+                document.Add(title);
+
+                ImageData imgData = ImageDataFactory.Create(new Uri("C:\\Users\\Visitor\\source\\repos\\rf-tools\\rf-tools\\Images\\TransmissionLines\\Stripline.png"));
+                Image img = new Image(imgData);
+
+                document.Add(img);
+
+                // Section 1 - Material Properties
+                header.Add("1. Material Properties");
+
+                body.Add(gcpw_params.DielProp.Name + "\n");
+                body.Add("eps_rel = " + permitivityRel + "\n");
+                body.Add("eps_eff = " + permitivityEff + "\n");
+                body.Add("tan d = " + gcpw_params.DielProp.TanD + "\n");
+                body.Add("CTE-z = " + gcpw_params.DielProp.CTE + " ppm\n");
+
+                // Add section header and body to document
+                document.Add(header);
+                document.Add(body);
+
+                // Remove text from formatted paragraphs
+                header.GetChildren().Clear();
+                body.GetChildren().Clear();
+
+                // Section 2 - Trace Geometry
+                header.Add("2. Trace Geometry");
+
+                body.Add("W = " +
+                    Convert_To_External_Units(width, gcpw_params.WidthUnits) +
+                    " " +
+                    gcpw_params.WidthUnits +
+                    "\n");
+
+                body.Add("gap = " +
+                    Convert_To_External_Units(gap, gcpw_params.GapUnits) +
+                    " " +
+                    gcpw_params.GapUnits +
+                    "\n");
+
+                body.Add("L = " +
+                    Convert_To_External_Units(length, gcpw_params.LengthUnits) +
+                    " " +
+                    gcpw_params.LengthUnits +
+                    "\n");
+
+                body.Add("H = " +
+                    Convert_To_External_Units(height, gcpw_params.HeightUnits) +
+                    " " +
+                    gcpw_params.HeightUnits +
+                    "\n");
+
+                // Add section header and body to document
+                document.Add(header);
+                document.Add(body);
+
+                // Remove text from formatted paragraphs
+                header.GetChildren().Clear();
+                body.GetChildren().Clear();
+
+                header.Add("3. Electrical Properties");
+
+                body.Add("Z = " + impedance + " Ohms\n");
+
+                body.Add("theta = " +
+                    Convert_To_External_Units(theta, gcpw_params.SysProp.ThetaUnits) +
+                    " " +
+                    gcpw_params.SysProp.ThetaUnits +
+                    "\n");
+
+                body.Add("beta = " +
+                    Convert_To_Internal_Units(beta, gcpw_params.LengthUnits) + // since the variable unit is 1/length
+                    " rad/" +
+                    gcpw_params.LengthUnits +
+                    "\n");
+
+                body.Add("wavelength = " +
+                    Convert_To_External_Units(wavelength, gcpw_params.LengthUnits) +
+                    " " +
+                    gcpw_params.LengthUnits +
+                    "\n");
+
+                body.Add("propDelay = " + propDelay + " m/s\n");
+
+                // Add section header and body to document
+                document.Add(header);
+                document.Add(body);
+
+                // Remove text from formatted paragraphs
+                header.GetChildren().Clear();
+                body.GetChildren().Clear();
+
+                // Section 4 - GCPW Losses
+                header.Add("4. GCPW Losses");
+
+                body.Add("alpha_d = " +
+                    Convert_To_Internal_Units(alpha_d, gcpw_params.LengthUnits) +
+                    " dB/" +
+                    gcpw_params.LengthUnits +
+                    "\n");
+
+                body.Add("alpha_c = " +
+                    Convert_To_Internal_Units(alpha_c, gcpw_params.LengthUnits) +
+                    " dB/" +
+                    gcpw_params.LengthUnits +
+                    "\n");
+
+                document.Add(header);
+                document.Add(body);
+
+                document.Close();
             }
         }
 

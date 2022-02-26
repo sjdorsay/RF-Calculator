@@ -3,6 +3,7 @@ using iText.Layout;
 using iText.Layout.Element;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using TextAlignment = iText.Layout.Properties.TextAlignment;
 
@@ -10,13 +11,8 @@ using TextAlignment = iText.Layout.Properties.TextAlignment;
 
 namespace rf_tools
 {
-    public class AttenuatorParameters : INotifyPropertyChanged
+    public class Attenuator : INotifyPropertyChanged
     {
-        private double res1;
-        private double res2;
-        private double res3;
-        private double res4;
-
         private double impedance;
 
         private double attenuation;
@@ -28,31 +24,6 @@ namespace rf_tools
         {
             get { return genReport; }
             set { genReport = value; NotifyPropertyChanged("GenReport"); }
-        }
-
-
-        public double Res1
-        {
-            get { return res1; }
-            set { res1 = value; NotifyPropertyChanged("Res1"); }
-        }
-
-        public double Res2
-        {
-            get { return res2; }
-            set { res2 = value; NotifyPropertyChanged("Res2"); }
-        }
-
-        public double Res3
-        {
-            get { return res3; }
-            set { res3 = value; NotifyPropertyChanged("Res3"); }
-        }
-
-        public double Res4
-        {
-            get { return res4; }
-            set { res4 = value; NotifyPropertyChanged("Res4"); }
         }
 
         public double Impedance
@@ -77,7 +48,93 @@ namespace rf_tools
         public void NotifyPropertyChanged(string propName)
         {
             if (this.PropertyChanged != null)
-                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+    }
+
+    public class PiAttenuator : Attenuator
+    {
+        private double res1;
+        private double res2;
+
+        public double Res1
+        {
+            get { return res1; }
+            set { res1 = value; NotifyPropertyChanged("Res1"); }
+        }
+
+        public double Res2
+        {
+            get { return res2; }
+            set { res2 = value; NotifyPropertyChanged("Res2"); }
+        }
+    }
+
+    public class TeeAttenuator : Attenuator
+    {
+        private double res1;
+        private double res2;
+
+        public double Res1
+        {
+            get { return res1; }
+            set { res1 = value; NotifyPropertyChanged("Res1"); }
+        }
+
+        public double Res2
+        {
+            get { return res2; }
+            set { res2 = value; NotifyPropertyChanged("Res2"); }
+        }
+    }
+
+    public class BTeeAttenuator : Attenuator
+    {
+        private double res1;
+        private double res2;
+        private double res3;
+        private double res4;
+
+        public double Res1
+        {
+            get { return res1; }
+            set { res1 = value; NotifyPropertyChanged("Res1"); }
+        }
+
+        public double Res2
+        {
+            get { return res2; }
+            set { res2 = value; NotifyPropertyChanged("Res2"); }
+        }
+
+        public double Res3
+        {
+            get { return res3; }
+            set { res3 = value; NotifyPropertyChanged("Res3"); }
+        }
+
+        public double Res4
+        {
+            get { return res4; }
+            set { res4 = value; NotifyPropertyChanged("Res4"); }
+        }
+    }
+
+    public class ReflAttenuator : Attenuator
+    {
+        private double res1;
+        private double res2;
+
+        public double Res1
+        {
+            get { return res1; }
+            set { res1 = value; NotifyPropertyChanged("Res1"); }
+        }
+
+        public double Res2
+        {
+            get { return res2; }
+            set { res2 = value; NotifyPropertyChanged("Res2"); }
         }
     }
 
@@ -89,10 +146,10 @@ namespace rf_tools
         private bool attenRunSynthesis = false;
         private bool attenRunEvaluate = false;
 
-        readonly AttenuatorParameters pi_atten = new AttenuatorParameters();
-        readonly AttenuatorParameters tee_atten = new AttenuatorParameters();
-        readonly AttenuatorParameters btee_atten = new AttenuatorParameters();
-        readonly AttenuatorParameters refl_atten = new AttenuatorParameters();
+        private readonly PiAttenuator pi_atten = new PiAttenuator();
+        private readonly TeeAttenuator tee_atten = new TeeAttenuator();
+        private readonly BTeeAttenuator btee_atten = new BTeeAttenuator();
+        private readonly ReflAttenuator refl_atten = new ReflAttenuator();
 
         /** Attenuator Initilazation Function **/
         public Attenuators()
@@ -152,7 +209,7 @@ namespace rf_tools
                 double exp = 2 + (Math.Round(esr * deci) / esr);
 
                 stdRes = Math.Round(Math.Pow(10, exp));
-                stdRes = stdRes * Math.Pow(10, inte - 2);
+                stdRes *= Math.Pow(10, inte - 2);
             }
 
             return stdRes;
@@ -193,6 +250,29 @@ namespace rf_tools
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
+        }
+
+        /** Export LTSpice of PI Attenuator **/
+        private void Atten_PI_Export_LTSpice()
+        {
+            LTSpiceAdapter adapter = new LTSpiceAdapter();
+
+            string UserName = Environment.UserName;
+            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+
+            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+            adapter.AddResistor(1, 0, new LTSpiceCoords(0, 16, 0),
+                string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
+            adapter.AddResistor(2, 1, new LTSpiceCoords(144, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", pi_atten.Res2));
+            adapter.AddResistor(2, 0, new LTSpiceCoords(128, 16, 0),
+                string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
+            adapter.AddResistor(2, 0, new LTSpiceCoords(176, 16, 0), "50");
+
+            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
+            adapter.AddParameter(0, -64, "tolR", (float)pi_atten.Tolerance / 100);
+
+            File.WriteAllText(DocuPath + "pi_attenuator.asc", adapter.ToString());
         }
 
         /** PI Attenuator - Synthesis / Evalute **/
@@ -313,6 +393,29 @@ namespace rf_tools
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
+        }
+
+        /** Export LTSpice of TEE Attenuator **/
+        private void Atten_TEE_Export_LTSpice()
+        {
+            LTSpiceAdapter adapter = new LTSpiceAdapter();
+
+            string UserName = Environment.UserName;
+            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+
+            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
+            adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
+                string.Format("{{mc({0}, tolR)}}", tee_atten.Res2));
+            adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
+            adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
+            adapter.AddParameter(0, -64, "tolR", (float)tee_atten.Tolerance / 100);
+
+            File.WriteAllText(DocuPath + "tee_attenuator.asc", adapter.ToString());
         }
 
         /** Tee Attenuator - Synthesis / Evalute **/
@@ -446,6 +549,31 @@ namespace rf_tools
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
+        }
+
+        /** Export LTSpice of BTEE Attenuator **/
+        private void Atten_BTEE_Export_LTSpice()
+        {
+            LTSpiceAdapter adapter = new LTSpiceAdapter();
+
+            string UserName = Environment.UserName;
+            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+
+            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", btee_atten.Res2));
+            adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
+                string.Format("{{mc({0}, tolR)}}", btee_atten.Res4));
+            adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", btee_atten.Res3));
+            adapter.AddResistor(3, 1, new LTSpiceCoords(144, -32, 90),
+                string.Format("{{mc({0}, tolR)}}", btee_atten.Res1));
+            adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
+            adapter.AddParameter(0, -64, "tolR", (float)btee_atten.Tolerance / 100);
+
+            File.WriteAllText(DocuPath + "btee_attenuator.asc", adapter.ToString());
         }
 
         /** Bridged Tee Attenuator - Synthesis / Evalute **/
@@ -732,7 +860,7 @@ namespace rf_tools
             header.Add("4. Power Handling");
 
             body.Add("Maximum: " + maxPwr + " dBm\n");
-            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W\n");
+            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W, at room temperature and 0% derated.\n");
 
             // Add section header and body to document
             document.Add(header);
@@ -824,7 +952,7 @@ namespace rf_tools
         {
             string filePath = Environment.CurrentDirectory;
 
-            System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\attenuator.html");
+            _ = System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\attenuator.html");
         }
 
         /** Report Generation Checkbox Handler **/
@@ -893,6 +1021,39 @@ namespace rf_tools
                 /**Default: PI Attenuator**/
                 default:
                     pi_atten.GenReport = genReport;
+                    break;
+            }
+        }
+
+        /** LTSpice Export Handler **/
+        private void Export_LTSpice(object sender, RoutedEventArgs e)
+        {
+            // Assign the permitivity value
+            switch (attTabCtrl.SelectedIndex)
+            {
+                /**Tab 0: PI Attenuator**/
+                case 0:
+                    Atten_PI_Export_LTSpice();
+                    break;
+
+                /**Tab 1: Tee Attenuator**/
+                case 1:
+                    Atten_TEE_Export_LTSpice();
+                    break;
+
+                /**Tab 2: Bridged Tee Attenuator**/
+                case 2:
+                    Atten_BTEE_Export_LTSpice();
+                    break;
+
+                /**Tab 3: Reflection Attenuator**/
+                case 3:
+
+                    break;
+
+                /**Default: PI Attenuator**/
+                default:
+                    Atten_PI_Run();
                     break;
             }
         }

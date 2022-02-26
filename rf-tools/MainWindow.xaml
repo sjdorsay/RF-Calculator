@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:rf_tools"
         mc:Ignorable="d"
-        Title="MainWindow" Height="500" Width="600" Background="LightGray">
+        Title="RF Design Tools" Height="500" Width="600" Background="LightGray">
 
     <Window.Resources>
         <Style TargetType="Button">
@@ -48,6 +48,7 @@
         </Style>
     </Window.Resources>
 
+    <ScrollViewer>
     <StackPanel Orientation="Vertical">
         <Label>Library</Label>
         <WrapPanel Orientation="Horizontal" Width="300">
@@ -68,9 +69,17 @@
                 <Image Source="Images/Filters/Filter.png" />
             </Button>
 
+                <Button Click="Button_UnderConstruction" Background="SlateGray"/>
             <Button Click="Button_UnderConstruction" Background="SlateGray"/>
+            <Button Click="Button_UnderConstruction" Background="SlateGray"/>
+        </WrapPanel>
+
+        <Label>Calculator</Label>
+        <WrapPanel Orientation="Horizontal" Width="300">
+                <Button Click="Button_UnderConstruction" Background="SlateGray"/>
             <Button Click="Button_UnderConstruction" Background="SlateGray"/>
             <Button Click="Button_UnderConstruction" Background="SlateGray"/>
         </WrapPanel>
     </StackPanel>
+    </ScrollViewer>
 </Window>

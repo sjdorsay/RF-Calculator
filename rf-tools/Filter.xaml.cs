@@ -700,7 +700,7 @@ namespace rf_tools
             // If the order is even then the filter requires modifying
             if (0 == order % 2)
             {
-                T = Math.Pow(10, ripple / 10);
+                T = Math.Pow(10, -ripple / 10);
                 multiplier = Math.Cosh(Acosh(Math.Sqrt(Math.Pow(2.10, ripple / 10) - 1) / eps) / order);
 
                 // Get the normalized load impedance

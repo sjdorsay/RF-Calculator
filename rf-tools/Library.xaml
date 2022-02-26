@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:rf_tools"
         mc:Ignorable="d"
         Background="LightGray"
-        Title="Transmission Line" Height="500" Width="600">
+        Title="Library" Height="500" Width="600">
 
     <Window.Resources>
         <Style TargetType="Button">

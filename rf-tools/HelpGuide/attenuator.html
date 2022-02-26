@@ -48,7 +48,7 @@
 				<div class="inner">
 					<h1>Attenuator</h1>
 					<span class="image main"><img src="images/pic13.jpg" alt="" /></span>
-					
+
 					<p><span class="image left"><img src="images/Attenuator_Pi.png" alt="" /></span>The attenuator design tool is separated into four (4) distinct attenuator architectures: pi, tee, bridged-tee, and reflective. The user may choose among these architectures by clicking on the related tab docked to the left of the window. Going down the tabs the user can see there is the pi, tee, bridged-tee and reflective attenuators. Clicking one of these tabs will activate that specific design tool. The image to the left depicts the pi attenuator design tool.</p>
 					<p>On the top right of the window is a help button that takes the user to this design guide for help relating to certain controls. Below this is an image of the attenuator schematic with reference designators to indicate the value associated with each resistor.</p>
 					<p>Under the Synthesis label is the attenuation (Atten)input, the characteristic/system impedance (Z0) input, and the resistor tolerance (Tol) input. The attenuation value should be entered as a positive number; negative numbers mean a gain which is not feasible in a purely linear circuit. Along with the system impedance, the attenuation value is used to determine the ideal resistor values. From here the tolerance of the resistor is used to determine the standard resistor values required. Once the calculations are completed the boxes under the Evaluate label are filled with the appropriate values.</p>
@@ -61,7 +61,38 @@
 						<li>Attenuation Variation</li>
 						<li>Estimated Maximum Power</li>
 					</ul>
-					
+
+					<h1>Power Handling</h1>
+					<p>The power handling capability of the presented attenuators depend on the selected resistor rating. The basic idea is that the power dissipation is spread among the resistors in the circuit, and the total amount of power dissipated is related to the attenuation value. In essence this means that lower valued attenuators can handle higher power levels.</p>
+					<p>In order to further increase the power handling of the circuit there are a couple paths to follow:</p>
+					<ol>
+						<li>Increase Package Size</li>
+						<li>Material Change</li>
+					</ol>
+					<p>Increasing package size will yield a higher power rating at the expense of board real-estate and wideband performance. For example going from 0402 resistors to 0603 might double the total amount of continuous sustainable power level. For many applications this may be enough.</p>
+					<p>However, this is not always acceptable. Certain circumstances will require 50 W (or higher) handling at 50% de-rating. Designing an attenuator for continuous 100 W operation cannot be done by simply increasing package size. Situations such as the one presented would warrant the use higher power materials at the expense of broadband performance.</p>
+					<p>Many materials exist for resistors,
+						<ol>
+							<li>Thin Film</li>
+							<li>Thick Film</li>
+							<li>Metal Film</li>
+							<li>Wirewound</li>
+							<li>Cemented Wirewound</li>
+						</ol>
+					</p>
+
+					<p>The generated report displays power handling assuming an 0402 1/16 W resistor is being used. The way to convert this number into the designed application is by the following equation</p>
+					<p>power + 10 * log(16 * rating)</p>
+
+					<h1>Temperature Performance</h1>
+
+					<h1>Applications</h1>
+					<h2>Variable Attenuator</h2>
+
+					<h2>Gain Equalizer</h2>
+
+					<h2>Temperature Compensation</h2>
+
 				</div>
 			</div>
 	

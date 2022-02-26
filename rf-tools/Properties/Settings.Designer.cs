@@ -22,18 +22,5 @@ namespace rf_tools.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Visitor\\source\\repos" +
-            "\\rf-tools\\rf-tools\\RF_Tools_Database.mdf;Integrated Security=True")]
-        public string db_cn_string {
-            get {
-                return ((string)(this["db_cn_string"]));
-            }
-            set {
-                this["db_cn_string"] = value;
-            }
-        }
     }
 }
