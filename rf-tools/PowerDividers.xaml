@@ -69,260 +69,272 @@
         </Style>
     </Window.Resources>
 
-    <TabControl x:Name="attTabCtrl" TabStripPlacement="Left" Background="LightGray" >
-        <TabControl.Resources>
-            <Style TargetType="{x:Type TabItem}">
-                <Setter Property="Padding" Value="2" />
-                <Setter Property="Background" Value="DarkGray" />
-                <Setter Property="HeaderTemplate">
-                    <Setter.Value>
-                        <DataTemplate>
-                            <ContentPresenter Content="{TemplateBinding Content}" />
-                        </DataTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </TabControl.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Export">
+                    <MenuItem Header="_Report" Click="Export_Report" />
+                    <MenuItem Header="_LTSpice" Click="Export_LTSpice" />
+                </MenuItem>
+            </MenuItem>
 
-        <!-- Lumped Divider -->
-        <TabItem x:Name="powDivLumpedTab">
-            <TabItem.Header>
-                <Image Source="Images/Attenuators/PiAttenuator.png" Height="50" Width="50" />
-            </TabItem.Header>
+            <MenuItem Header="Help" Click="Help_Button_Click"/>
+        </Menu>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+        <TabControl x:Name="powDivTabCtrl" TabStripPlacement="Left" Background="LightGray" >
+            <TabControl.Resources>
+                <Style TargetType="{x:Type TabItem}">
+                    <Setter Property="Padding" Value="2" />
+                    <Setter Property="Background" Value="DarkGray" />
+                    <Setter Property="HeaderTemplate">
+                        <Setter.Value>
+                            <DataTemplate>
+                                <ContentPresenter Content="{TemplateBinding Content}" />
+                            </DataTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                </Grid.RowDefinitions>
+            <!-- Resistive Divider -->
+            <TabItem x:Name="powDivResTab">
+                <TabItem.Header>
+                    <Image Source="Images/Attenuators/PiAttenuator.png" Height="50" Width="50" />
+                </TabItem.Header>
 
-                <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/PiAttenuator-Dimensions.png" />
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="2*" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                    </Grid.RowDefinitions>
 
-                <!-- Row 3 -->
-                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
-                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="N" />
-                        <ComboBox Width="100" SelectedIndex="0" >
-                            <ComboBoxItem>2</ComboBoxItem>
-                            <ComboBoxItem>3</ComboBoxItem>
-                            <ComboBoxItem>4</ComboBoxItem>
-                            <ComboBoxItem>5</ComboBoxItem>
-                        </ComboBox>
-                        <Label MinWidth="50" Padding="5" Content="Ways"/>
+                    <!-- Row 1 -->
+                    <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
+
+                    <!-- Row 2 -->
+                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/PiAttenuator-Dimensions.png" />
+
+                    <!-- Row 3 -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
+                        <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="N" />
+                            <ComboBox Width="100" SelectedIndex="0" Text="{Binding Path=NPorts, Mode=OneWayToSource}" >
+                                <ComboBoxItem>2</ComboBoxItem>
+                                <ComboBoxItem>3</ComboBoxItem>
+                                <ComboBoxItem>4</ComboBoxItem>
+                                <ComboBoxItem>5</ComboBoxItem>
+                            </ComboBox>
+                            <Label MinWidth="50" Padding="5" Content="Ways"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="Z0" />
+                            <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" Text="{Binding Path=Impedance, Mode=TwoWay}" />
+                            <Label MinWidth="50" Padding="5" Content="Ω"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="Tol" />
+                            <ComboBox Width="100" SelectedIndex="0" Text="{Binding Path=Tolerance, Mode=OneWayToSource}">
+                                <ComboBoxItem Content="0.1"></ComboBoxItem>
+                                <ComboBoxItem Content="1"></ComboBoxItem>
+                                <ComboBoxItem Content="2"></ComboBoxItem>
+                                <ComboBoxItem Content="5"></ComboBoxItem>
+                            </ComboBox>
+                            <Label MinWidth="50" Padding="5" Content="%"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Z0" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
+                        <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="R" />
+                            <TextBox Text="{Binding Path=Res, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                            <Label MinWidth="50" Padding="5" Content="Ω"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Tol" />
-                        <ComboBox Width="100" SelectedIndex="0">
-                            <ComboBoxItem Content="0.1"></ComboBoxItem>
-                            <ComboBoxItem Content="1"></ComboBoxItem>
-                            <ComboBoxItem Content="2"></ComboBoxItem>
-                            <ComboBoxItem Content="5"></ComboBoxItem>
-                        </ComboBox>
-                        <Label MinWidth="50" Padding="5" Content="%"/>
-                    </StackPanel>
-                </StackPanel>
+                    <!-- Row 4 -->
 
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+                    <!-- Row 5 -->
+                    <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="PowDiv_Synthesis_Click" />
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="R" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
-                    </StackPanel>
-                </StackPanel>
+                    <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="PowDiv_Evaluate_Click" />
+                </Grid>
+            </TabItem>
 
-                <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
+            <!-- Wilkinson Power Divider -->
+            <TabItem x:Name="powDivWilkTab">
+                <TabItem.Header>
+                    <Image Source="Images/Attenuators/TeeAttenuator.png" Height="50" Width="50" />
+                </TabItem.Header>
 
-                <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
-            </Grid>
-        </TabItem>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="2*" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                    </Grid.RowDefinitions>
 
-        <!-- Wilkinson Power Divider -->
-        <TabItem x:Name="powDivWilkTab">
-            <TabItem.Header>
-                <Image Source="Images/Attenuators/TeeAttenuator.png" Height="50" Width="50" />
-            </TabItem.Header>
+                    <!-- Row 1 -->
+                    <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                    <!-- Row 2 -->
+                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                </Grid.RowDefinitions>
+                    <!-- Row 3 -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
+                        <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
 
-                <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="Z0" />
+                            <TextBox Text="{Binding Path=Impedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                            <Label MinWidth="50" Padding="5" Content="Ω"/>
+                        </StackPanel>
 
-                <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
-
-                <!-- Row 3 -->
-                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
-                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="P2 : P1" />
-                        <TextBox Width="100" />
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="Tol" />
+                            <ComboBox Width="100" SelectedIndex="0">
+                                <ComboBoxItem Content="0.1"></ComboBoxItem>
+                                <ComboBoxItem Content="1"></ComboBoxItem>
+                                <ComboBoxItem Content="2"></ComboBoxItem>
+                                <ComboBoxItem Content="5"></ComboBoxItem>
+                            </ComboBox>
+                            <Label MinWidth="50" Padding="5" Content="%"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Z0" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
+                        <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="TL" />
+                            <TextBox Text="{Binding Path=TLImpedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
+                            <Label MinWidth="50" Padding="5" Content="Ω, 90 degrees"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="R" />
+                            <TextBox Text="{Binding Path=Res, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                            <Label MinWidth="50" Padding="5" Content="Ω"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Tol" />
-                        <ComboBox Width="100" SelectedIndex="0">
-                            <ComboBoxItem Content="0.1"></ComboBoxItem>
-                            <ComboBoxItem Content="1"></ComboBoxItem>
-                            <ComboBoxItem Content="2"></ComboBoxItem>
-                            <ComboBoxItem Content="5"></ComboBoxItem>
-                        </ComboBox>
-                        <Label MinWidth="50" Padding="5" Content="%"/>
-                    </StackPanel>
-                </StackPanel>
+                    <!-- Row 4 -->
 
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+                    <!-- Row 5 -->
+                    <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="PowDiv_Synthesis_Click" />
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="R" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
-                    </StackPanel>
-                </StackPanel>
+                    <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="PowDiv_Evaluate_Click" />
+                </Grid>
+            </TabItem>
 
-                <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
+            <!-- Bailey Power Divider -->
+            <TabItem x:Name="powDivBailTab">
+                <TabItem.Header>
+                    <Image Source="Images/Attenuators/TeeAttenuator.png" Height="50" Width="50" />
+                </TabItem.Header>
 
-                <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
-            </Grid>
-        </TabItem>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="2*" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                    </Grid.RowDefinitions>
 
-        <!-- Bailey Power Divider -->
-        <TabItem x:Name="powDivBailTab">
-            <TabItem.Header>
-                <Image Source="Images/Attenuators/TeeAttenuator.png" Height="50" Width="50" />
-            </TabItem.Header>
+                    <!-- Row 1 -->
+                    <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                    <!-- Row 2 -->
+                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="2*" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                    <RowDefinition Height="20" />
-                </Grid.RowDefinitions>
+                    <!-- Row 3 -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
+                        <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="P3 : P2" />
+                            <TextBox Width="100" Text="{Binding Path=PwrRatio, Mode=TwoWay}" VerticalContentAlignment="Center"  />
+                        </StackPanel>
 
-                <!-- Row 1 -->
-                <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
-
-                <!-- Row 2 -->
-                <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
-
-                <!-- Row 3 -->
-                <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
-                    <Label Grid.Row="0" Grid.Column="1" Style="{StaticResource Header}" Margin="5 0" Content="Synthesis"/>
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="P2 : P1" />
-                        <TextBox Width="100" />
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="Z0" />
+                            <TextBox Text="{Binding Path=Impedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
+                            <Label MinWidth="50" Padding="5" Content="Ω"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="Z0" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="100" />
-                        <Label MinWidth="50" Padding="5" Content="Ω"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
+                        <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="TL1" />
+                            <TextBox Text="{Binding Path=ImpedQuartWave, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
+                            <Label Padding="5" Content="Ω, L " />
+                            <TextBox Text="{Binding Path=Theta1, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
+                            <ComboBox Text="{Binding Path=Theta1Units, Mode=OneWayToSource}" Width="50" SelectedIndex="0">
+                                <ComboBoxItem Content="deg"></ComboBoxItem>
+                                <ComboBoxItem Content="rad"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="TL2" />
+                            <TextBox Text="{Binding Path=Impedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
+                            <Label Padding="5" Content="Ω, L" />
+                            <TextBox Text="{Binding Path=Theta2, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
+                            <ComboBox Text="{Binding Path=Theta2Units, Mode=OneWayToSource}" Width="50" SelectedIndex="0">
+                                <ComboBoxItem Content="deg"></ComboBoxItem>
+                                <ComboBoxItem Content="rad"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="10 2">
+                            <Label MinWidth="50" Padding="5" Content="TL3" />
+                            <TextBox Text="{Binding Path=Impedance, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
+                            <Label Padding="5" Content="Ω, L " />
+                            <TextBox Text="{Binding Path=Theta3, Mode=TwoWay}" TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
+                            <ComboBox Text="{Binding Path=Theta3Units, Mode=OneWayToSource}" Width="50" SelectedIndex="0">
+                                <ComboBoxItem Content="deg"></ComboBoxItem>
+                                <ComboBoxItem Content="rad"></ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
 
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Vertical">
-                    <Label Style="{StaticResource Header}" Margin="5 0" Content="Evaluate" />
+                    <!-- Row 4 -->
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="TL0" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
-                        <Label Padding="5" Content="Ω, L" Width="40" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
-                        <ComboBox Width="50" SelectedIndex="0">
-                            <ComboBoxItem Content="deg"></ComboBoxItem>
-                            <ComboBoxItem Content="rad"></ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
+                    <!-- Row 5 -->
+                    <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="PowDiv_Synthesis_Click" />
 
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="TL1" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
-                        <Label Padding="5" Content="Ω, L" Width="40" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
-                        <ComboBox Width="50" SelectedIndex="0">
-                            <ComboBoxItem Content="deg"></ComboBoxItem>
-                            <ComboBoxItem Content="rad"></ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="10 2">
-                        <Label MinWidth="50" Padding="5" Content="TL2" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="60" />
-                        <Label Padding="5" Content="Ω, L" Width="40" />
-                        <TextBox TextAlignment="Left" VerticalContentAlignment="Center" Width="50" />
-                        <ComboBox Width="50" SelectedIndex="0">
-                            <ComboBoxItem Content="deg"></ComboBoxItem>
-                            <ComboBoxItem Content="rad"></ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Row 4 -->
-                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" Content="Generate Report" HorizontalAlignment="Center" />
-
-                <!-- Row 5 -->
-                <Button Grid.Row="4" Grid.Column="0" Content="Synthesis" Margin="5 0" Click="Atten_Synthesis_Click" />
-
-                <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="Atten_Evaluate_Click" />
-            </Grid>
-        </TabItem>
-    </TabControl>
+                    <Button Grid.Row="4" Grid.Column="1" Content="Evaluate" Margin="5 0" Click="PowDiv_Evaluate_Click" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
 </Window>

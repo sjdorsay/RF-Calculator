@@ -49,37 +49,37 @@
     </Window.Resources>
 
     <ScrollViewer>
-    <StackPanel Orientation="Vertical">
-        <Label>Library</Label>
-        <WrapPanel Orientation="Horizontal" Width="300">
-            <Button Click="Button_Library" Background="SlateGray">
-                <Image Source="Images/Library-NoShelf.png" />
-            </Button>
-        </WrapPanel>
+        <StackPanel Orientation="Vertical">
+            <Label>Library</Label>
+            <WrapPanel Orientation="Horizontal" Width="300">
+                <Button Click="Button_Library" Background="SlateGray">
+                    <Image Source="Images/Library-NoShelf.png" />
+                </Button>
+            </WrapPanel>
 
-        <Label>Design Tools</Label>
-        <WrapPanel Orientation="Horizontal" Width="300">
-            <Button Click="Button_TransmissionLine"  Background="SlateGray" >
-                <Image Source="Images/TransmissionLines/CoplanarWaveguide-Grounded.png" />
-            </Button>
-            <Button Click="Button_Attenuator" Background="SlateGray">
-                <Image Source="Images/Attenuators/Attenuator.png" Height="50" Width="50" />
-            </Button>
-            <Button Click="Button_Filter" Background="SlateGray">
-                <Image Source="Images/Filters/Filter.png" />
-            </Button>
+            <Label>Design Tools</Label>
+            <WrapPanel Orientation="Horizontal" Width="300">
+                <Button Click="Button_TransmissionLine"  Background="SlateGray" >
+                    <Image Source="Images/TransmissionLines/CoplanarWaveguide-Grounded.png" />
+                </Button>
+                <Button Click="Button_Attenuator" Background="SlateGray">
+                    <Image Source="Images/Attenuators/Attenuator.png" Height="50" Width="50" />
+                </Button>
+                <Button Click="Button_Filter" Background="SlateGray">
+                    <Image Source="Images/Filters/Filter.png" />
+                </Button>
 
+                <Button Click="Button_PowerDivider" Background="SlateGray"/>
                 <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-            <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-            <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-        </WrapPanel>
-
-        <Label>Calculator</Label>
-        <WrapPanel Orientation="Horizontal" Width="300">
                 <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-            <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-            <Button Click="Button_UnderConstruction" Background="SlateGray"/>
-        </WrapPanel>
-    </StackPanel>
+            </WrapPanel>
+
+            <Label>Calculator</Label>
+            <WrapPanel Orientation="Horizontal" Width="300">
+                <Button Click="Button_Intermodulation" Background="SlateGray"/>
+                <Button Click="Button_UnderConstruction" Background="SlateGray"/>
+                <Button Click="Button_UnderConstruction" Background="SlateGray"/>
+            </WrapPanel>
+        </StackPanel>
     </ScrollViewer>
 </Window>

@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using TextAlignment = iText.Layout.Properties.TextAlignment;
+using rf_tools.Adapters;
 
 // iText7 PDF .NET Module
 
@@ -162,58 +163,160 @@ namespace rf_tools
             attReflTab.DataContext = refl_atten;
         }
 
-        /** Calculate Standard Resistance Value **/
-        private double GetStdResistor(double resistance, double tolerance)
+        /***************************/
+        /** PI Attenuator Section **/
+        /***************************/
+
+        /** -------------------------- **/
+        /** Synthesis Function Section **/
+        /** -------------------------- **/
+
+        /** Calculate Series Resistor of PI Attenuator **/
+        private double Atten_PI_Synth_GetSeriesRes()
         {
-            // Default resistor is 0 Ohms
-            double stdRes = 0;
-            int esr;
+            double rser = 0;
+            double a = Math.Pow(10, pi_atten.Attenuation / 20);
+            double imped = pi_atten.Impedance;
+            double tol = pi_atten.Tolerance;
 
-            // Initialize Auxiliary Variables
-            double whole;
-            int inte;
-            double deci;
-
-            switch (tolerance)
+            if (1 < a)
             {
-                case 0.1:
-                    esr = 192;
-                    break;
-                case 0.5:
-                    esr = 192;
-                    break;
-                case 1:
-                    esr = 96;
-                    break;
-                case 2:
-                    esr = 48;
-                    break;
-                case 5:
-                    esr = 24;
-                    break;
-                default:
-                    esr = 96;
-                    break;
+                rser = imped * (Math.Pow(a, 2) - 1) / (2 * a);
             }
 
-            // Calculate the value increments
-            double inc = Math.Pow(10, 1 / esr);
-
-            // Find the closest power
-            if (resistance != 0)
-            {
-                whole = Math.Log10(resistance);
-                inte = (int)whole;
-                deci = whole - inte;
-
-                double exp = 2 + (Math.Round(esr * deci) / esr);
-
-                stdRes = Math.Round(Math.Pow(10, exp));
-                stdRes *= Math.Pow(10, inte - 2);
-            }
-
-            return stdRes;
+            return CommonFunctions.GetStdResistor(rser, tol);
         }
+
+        /** Calculate Shunt Resistor of PI Attenuator **/
+        private double Atten_PI_Synth_GetShuntRes()
+        {
+            double rshunt = 1e6;
+            double a = Math.Pow(10, pi_atten.Attenuation / 20);
+            double imped = pi_atten.Impedance;
+            double tol = pi_atten.Tolerance;
+
+            if (1 < a)
+            {
+                rshunt = imped * (a + 1) / (a - 1);
+            }
+
+            return CommonFunctions.GetStdResistor(rshunt, tol);
+        }
+
+        /** ------------------------- **/
+        /** Evaluate Function Section **/
+        /** ------------------------- **/
+
+        /** Calculate Attenuation of PI Attenuator **/
+        private double Atten_PI_Eval_GetAttenuation()
+        {
+            double atten;
+
+            double r1, r2;
+
+            // The attenuation can be calculated using the PI attenuator
+            // algorithm with one adjustment.
+            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+
+            atten = Atten_PI_GetAttenuation(r1, r2, r1);
+
+            return atten;
+        }
+
+        /** Calculate Attenuation of PI Attenuator **/
+        private double Atten_PI_Eval_GetWorstAttenuation()
+        {
+            double attenLow, attenHigh, attenNom;
+            double attenWorst;
+
+            double r1, r2;
+
+            // The attenuation can be calculated using the PI attenuator
+            // algorithm with one adjustment.
+            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
+
+            // Highest Attenuation
+            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
+            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
+
+            attenHigh = Atten_PI_GetAttenuation(r1, r2, r1);
+
+            // Lowest Attenuation
+            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
+            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
+
+            attenLow = Atten_PI_GetAttenuation(r1, r2, r1);
+
+            // Nominal Attenuation
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+
+            attenNom = Atten_PI_GetAttenuation(r1, r2, r1);
+
+            attenWorst = (attenHigh - attenNom) > (attenNom - attenLow) ? attenHigh : attenLow;
+
+            return attenWorst;
+        }
+
+        /** Calculate Input Impedanceof PI Attenuator **/
+        private double Atten_PI_Eval_GetImpedance()
+        {
+            double imped;
+
+            double r1, r2, r3;
+
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+            r3 = pi_atten.Res1;
+
+            imped = Atten_PI_GetImpedance(r1, r2, r3);
+
+            return imped;
+        }
+
+        /** Calculate Input Impedanceof PI Attenuator **/
+        private double Atten_PI_Eval_GetWorstImpedance()
+        {
+            // TO DO:
+            // The run function has a nice way to find worst-case.
+            // check this out
+            double impedLow, impedHigh, impedNom;
+            double impedWorst;
+
+            double r1, r2, r3;
+
+            // Nominal Impedance
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+            r3 = pi_atten.Res1;
+
+            impedNom = Atten_PI_GetImpedance(r1, r2, r3);
+
+            // Highest Impedance
+            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
+            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
+            r3 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
+
+            impedHigh = Atten_PI_GetImpedance(r1, r2, r3);
+
+            // Lowest Impedance
+            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
+            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
+            r3 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
+
+            impedLow = Atten_PI_GetImpedance(r1, r2, r3);
+
+            // Find the worst-case impedance
+            impedWorst = (impedHigh - impedNom) > (impedNom - impedLow) ? impedHigh : impedLow;
+
+            return impedWorst;
+        }
+
+        /** -------------------------- **/
+        /** Auxiliary Function Section **/
+        /** -------------------------- **/
 
         /** Calculate Attenuation of PI Attenuator **/
         private double Atten_PI_GetAttenuation(double r1, double r2, double r3)
@@ -252,13 +355,25 @@ namespace rf_tools
             return imped;
         }
 
+        /** Calculate Input Impedanceof PI Attenuator **/
+        private double Atten_PI_GetPowerRating()
+        {
+            double a;
+            double pwrRating;
+
+            a = Math.Pow(10, pi_atten.Attenuation / 20);
+            pwrRating = 0.0625 * (a + 1) / (a - 1);
+            pwrRating = 0.0625 * a * a / (a - 1);
+
+            return pwrRating;
+        }
+
         /** Export LTSpice of PI Attenuator **/
         private void Atten_PI_Export_LTSpice()
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+            string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
             adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
             adapter.AddResistor(1, 0, new LTSpiceCoords(0, 16, 0),
@@ -272,45 +387,53 @@ namespace rf_tools
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)pi_atten.Tolerance / 100);
 
-            File.WriteAllText(DocuPath + "pi_attenuator.asc", adapter.ToString());
+            File.WriteAllText(DocuPath, adapter.ToString());
+        }
+
+        /** Generate and Export PDF Report **/
+        private void Atten_PI_Export_Report()
+        {
+            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+
+            // Gather ideal values
+            _ = pi_atten.Attenuation;
+            _ = pi_atten.Impedance;
+            _ = pi_atten.Res1;
+            _ = pi_atten.Res2;
+
+            // Gather performance values
+            _ = Atten_PI_Eval_GetAttenuation();
+            _ = Atten_PI_Eval_GetWorstAttenuation();
+            _ = Atten_PI_Eval_GetImpedance();
+            _ = Atten_PI_Eval_GetWorstImpedance();
+
+            // Get other data
+            _ = Atten_PI_GetPowerRating();
         }
 
         /** PI Attenuator - Synthesis / Evalute **/
         public void Atten_PI_Run()
         {
             // Initialize resistor values
-            double r1 = 0;
-            double r2 = 1e6;
+            double r1 = 1e6;
+            double r2 = 0;
 
-            double a;
-            double imped;
             double tol;
 
             bool genReport = pi_atten.GenReport;
 
             if (attenRunSynthesis)
             {
-                a = Math.Pow(10, pi_atten.Attenuation / 20);
-                imped = pi_atten.Impedance;
-                tol = pi_atten.Tolerance;
-
-                if (1 < a)
-                {
-                    r1 = imped * (a + 1) / (a - 1);
-                    r2 = imped * (Math.Pow(a, 2) - 1) / (2 * a);
-                }
-
-                pi_atten.Res1 = GetStdResistor(r1, tol);
-                pi_atten.Res2 = GetStdResistor(r2, tol);
+                // Call resistor get functions
+                pi_atten.Res1 = Atten_PI_Synth_GetShuntRes();
+                pi_atten.Res2 = Atten_PI_Synth_GetSeriesRes();
             }
 
             if (attenRunEvaluate)
             {
-                r1 = pi_atten.Res1;
-                r2 = pi_atten.Res2;
-
-                pi_atten.Attenuation = Atten_PI_GetAttenuation(r1, r2, r1);
-                pi_atten.Impedance = Atten_PI_GetImpedance(r1, r2, r1);
+                // Calculate attenuation and impedance based on resistors provided
+                pi_atten.Attenuation = Atten_PI_Eval_GetAttenuation();
+                pi_atten.Impedance = Atten_PI_Eval_GetImpedance();
             }
 
             if (genReport)
@@ -358,6 +481,9 @@ namespace rf_tools
             }
         }
 
+        /****************************/
+        /** Tee Attenuator Section **/
+        /****************************/
         /** Calculate Attenuation of Tee Attenuator **/
         private double Atten_TEE_GetAttenuation(double r1, double r2, double r3)
         {
@@ -418,6 +544,12 @@ namespace rf_tools
             File.WriteAllText(DocuPath + "tee_attenuator.asc", adapter.ToString());
         }
 
+        /** Generate and Export PDF Report **/
+        private void Atten_TEE_Export_Report()
+        {
+            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+        }
+
         /** Tee Attenuator - Synthesis / Evalute **/
         public void Atten_TEE_Run()
         {
@@ -444,8 +576,8 @@ namespace rf_tools
                     r2 = 2 * imped * a / (Math.Pow(a, 2) - 1);
                 }
 
-                tee_atten.Res1 = GetStdResistor(r1, tol);
-                tee_atten.Res2 = GetStdResistor(r2, tol);
+                tee_atten.Res1 = CommonFunctions.GetStdResistor(r1, tol);
+                tee_atten.Res2 = CommonFunctions.GetStdResistor(r2, tol);
             }
 
             if (attenRunEvaluate)
@@ -502,6 +634,9 @@ namespace rf_tools
             }
         }
 
+        /************************************/
+        /** Bridged Tee Attenuator Section **/
+        /************************************/
         /** Calculate Attenuation of BTee Attenuator **/
         private double Atten_BTEE_GetAttenuation(double r1, double r2, double r3, double r4)
         {
@@ -575,6 +710,12 @@ namespace rf_tools
 
             File.WriteAllText(DocuPath + "btee_attenuator.asc", adapter.ToString());
         }
+        
+        /** Generate and Export PDF Report **/
+        private void Atten_BTEE_Export_Report()
+        {
+            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+        }
 
         /** Bridged Tee Attenuator - Synthesis / Evalute **/
         public void Atten_BTEE_Run()
@@ -607,10 +748,10 @@ namespace rf_tools
                     r4 = imped / (a - 1);
                 }
 
-                btee_atten.Res1 = GetStdResistor(r1, tol);
-                btee_atten.Res2 = GetStdResistor(r2, tol);
-                btee_atten.Res3 = GetStdResistor(r3, tol);
-                btee_atten.Res4 = GetStdResistor(r4, tol);
+                btee_atten.Res1 = CommonFunctions.GetStdResistor(r1, tol);
+                btee_atten.Res2 = CommonFunctions.GetStdResistor(r2, tol);
+                btee_atten.Res3 = CommonFunctions.GetStdResistor(r3, tol);
+                btee_atten.Res4 = CommonFunctions.GetStdResistor(r4, tol);
             }
 
             if (attenRunEvaluate)
@@ -672,6 +813,9 @@ namespace rf_tools
             }
         }
 
+        /***********************************/
+        /** Reflection Attenuator Section **/
+        /***********************************/
         /** Calculate Attenuation of Reflection Attenuator **/
         private double Atten_Refl_GetAttenuation(double r1, double r2)
         {
@@ -693,6 +837,12 @@ namespace rf_tools
             double imped = Math.Sqrt(r1 * r2);
 
             return imped;
+        }
+
+        /** Generate and Export PDF Report **/
+        private void Atten_Refl_Export_Report()
+        {
+            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
         }
 
         /** Reflection Attenuator - Synthesis / Evalute **/
@@ -721,8 +871,8 @@ namespace rf_tools
                     r2 = imped * (a + 1) / (a - 1);
                 }
 
-                refl_atten.Res1 = GetStdResistor(r1, tol);
-                refl_atten.Res2 = GetStdResistor(r2, tol);
+                refl_atten.Res1 = CommonFunctions.GetStdResistor(r1, tol);
+                refl_atten.Res2 = CommonFunctions.GetStdResistor(r2, tol);
             }
 
             if (attenRunEvaluate)
@@ -776,6 +926,83 @@ namespace rf_tools
                 Gen_Report(attenuation, impedance, new double[] { r1, r2 });
             }
         }
+
+        /*****************************/
+        /** Export Function Section **/
+        /*****************************/
+
+        /** LTSpice Export Handler **/
+        private void Export_LTSpice(object sender, RoutedEventArgs e)
+        {
+            // Assign the permitivity value
+            switch (attTabCtrl.SelectedIndex)
+            {
+                /**Tab 0: PI Attenuator**/
+                case 0:
+                    Atten_PI_Export_LTSpice();
+                    break;
+
+                /**Tab 1: Tee Attenuator**/
+                case 1:
+                    Atten_TEE_Export_LTSpice();
+                    break;
+
+                /**Tab 2: Bridged Tee Attenuator**/
+                case 2:
+                    Atten_BTEE_Export_LTSpice();
+                    break;
+
+                /**Tab 3: Reflection Attenuator**/
+                case 3:
+
+                    break;
+
+                /**Default: PI Attenuator**/
+                default:
+                    Atten_PI_Run();
+                    break;
+            }
+        }
+
+        /** LTSpice Export Handler **/
+        private void Export_Report(object sender, RoutedEventArgs e)
+        {
+            Atten_Synthesis_Click(sender, e);
+            Atten_Evaluate_Click(sender, e);
+
+            // Assign the permitivity value
+            switch (attTabCtrl.SelectedIndex)
+            {
+                /**Tab 0: PI Attenuator**/
+                case 0:
+                    Atten_PI_Export_Report();
+                    break;
+
+                /**Tab 1: Tee Attenuator**/
+                case 1:
+                    Atten_TEE_Export_Report();
+                    break;
+
+                /**Tab 2: Bridged Tee Attenuator**/
+                case 2:
+                    Atten_BTEE_Export_Report();
+                    break;
+
+                /**Tab 3: Reflection Attenuator**/
+                case 3:
+                    Atten_Refl_Export_Report();
+                    break;
+
+                /**Default: PI Attenuator**/
+                default:
+                    Atten_PI_Export_Report();
+                    break;
+            }
+        }
+
+        /***********************************/
+        /** GUI Interface Handler Section **/
+        /***********************************/
 
         /** Report Generation Function **/
         private void Gen_Report(double[] atten, double[] imped, double[] resList)
@@ -953,109 +1180,6 @@ namespace rf_tools
             string filePath = Environment.CurrentDirectory;
 
             _ = System.Diagnostics.Process.Start(filePath + "\\HelpGuide\\attenuator.html");
-        }
-
-        /** Report Generation Checkbox Handler **/
-        private void RadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            bool genReport = true;
-
-            // Enable report generation
-            switch (attTabCtrl.SelectedIndex)
-            {
-                /**Tab 0: PI Attenuator**/
-                case 0:
-                    pi_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 1: Tee Attenuator**/
-                case 1:
-                    tee_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 2: Bridged Tee Attenuator**/
-                case 2:
-                    btee_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 3: Reflection Attenuator**/
-                case 3:
-                    refl_atten.GenReport = genReport;
-                    break;
-
-                /**Default: PI Attenuator**/
-                default:
-                    pi_atten.GenReport = genReport;
-                    break;
-            }
-        }
-
-        /** Report Generation Checkbox Handler **/
-        private void RadioButton_Unchecked(object sender, RoutedEventArgs e)
-        {
-            bool genReport = false;
-
-            // Disable report generation
-            switch (attTabCtrl.SelectedIndex)
-            {
-                /**Tab 0: PI Attenuator**/
-                case 0:
-                    pi_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 1: Tee Attenuator**/
-                case 1:
-                    tee_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 2: Bridged Tee Attenuator**/
-                case 2:
-                    btee_atten.GenReport = genReport;
-                    break;
-
-                /**Tab 3: Reflection Attenuator**/
-                case 3:
-                    refl_atten.GenReport = genReport;
-                    break;
-
-                /**Default: PI Attenuator**/
-                default:
-                    pi_atten.GenReport = genReport;
-                    break;
-            }
-        }
-
-        /** LTSpice Export Handler **/
-        private void Export_LTSpice(object sender, RoutedEventArgs e)
-        {
-            // Assign the permitivity value
-            switch (attTabCtrl.SelectedIndex)
-            {
-                /**Tab 0: PI Attenuator**/
-                case 0:
-                    Atten_PI_Export_LTSpice();
-                    break;
-
-                /**Tab 1: Tee Attenuator**/
-                case 1:
-                    Atten_TEE_Export_LTSpice();
-                    break;
-
-                /**Tab 2: Bridged Tee Attenuator**/
-                case 2:
-                    Atten_BTEE_Export_LTSpice();
-                    break;
-
-                /**Tab 3: Reflection Attenuator**/
-                case 3:
-
-                    break;
-
-                /**Default: PI Attenuator**/
-                default:
-                    Atten_PI_Run();
-                    break;
-            }
         }
     }
 }

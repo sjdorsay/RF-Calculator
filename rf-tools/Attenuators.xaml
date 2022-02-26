@@ -73,7 +73,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Export">
-                    <MenuItem Header="_Report" IsCheckable="True" Checked="RadioButton_Checked" Unchecked="RadioButton_Unchecked" />
+                    <MenuItem Header="_Report" Click="Export_Report" />
                     <MenuItem Header="_LTSpice" Click="Export_LTSpice" />
                 </MenuItem>
             </MenuItem>

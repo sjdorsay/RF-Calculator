@@ -14,44 +14,44 @@ namespace rf_tools
 
         private void Button_UnderConstruction(object sender, RoutedEventArgs e)
         {
-            var ucWindow = new UnderConstruction();
-            ucWindow.ShowDialog();
+            UnderConstruction ucWindow = new UnderConstruction();
+            _ = ucWindow.ShowDialog();
         }
 
         private void Button_Attenuator(object sender, RoutedEventArgs e)
         {
-            var attWindow = new Attenuators();
-            attWindow.ShowDialog();
+            Attenuators attWindow = new Attenuators();
+            _ = attWindow.ShowDialog();
         }
 
         private void Button_Filter(object sender, RoutedEventArgs e)
         {
-            var filtWindow = new Filter();
-            filtWindow.ShowDialog();
+            Filter filtWindow = new Filter();
+            _ = filtWindow.ShowDialog();
         }
 
         private void Button_TransmissionLine(object sender, RoutedEventArgs e)
         {
-            var tlineWindow = new TransmissionLine();
-            tlineWindow.ShowDialog();
+            TransmissionLine tlineWindow = new TransmissionLine();
+            _ = tlineWindow.ShowDialog();
         }
 
         private void Button_PowerDivider(object sender, RoutedEventArgs e)
         {
-            var powDividerWindow = new PowerDividers();
-            powDividerWindow.ShowDialog();
+            PowerDividers powDividerWindow = new PowerDividers();
+            _ = powDividerWindow.ShowDialog();
         }
 
         private void Button_Intermodulation(object sender, RoutedEventArgs e)
         {
-            var intermodWindow = new Intermods();
-            intermodWindow.ShowDialog();
+            Intermods intermodWindow = new Intermods();
+            _ = intermodWindow.ShowDialog();
         }
 
         private void Button_Library(object sender, RoutedEventArgs e)
         {
-            var libWindow = new Library();
-            libWindow.ShowDialog();
+            Library libWindow = new Library();
+            _ = libWindow.ShowDialog();
         }
     }
 }
