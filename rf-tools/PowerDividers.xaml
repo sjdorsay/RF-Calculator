@@ -99,7 +99,7 @@
             <!-- Resistive Divider -->
             <TabItem x:Name="powDivResTab">
                 <TabItem.Header>
-                    <Image Source="Images/Attenuators/PiAttenuator.png" Height="50" Width="50" />
+                    <Image Source="Images/PowerDividers/ResistivePowerDivider.png" Height="50" Width="50" />
                 </TabItem.Header>
 
                 <Grid>
@@ -121,7 +121,7 @@
                     <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                     <!-- Row 2 -->
-                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/PiAttenuator-Dimensions.png" />
+                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/PowerDividers/ResistivePowerDivider-Dimensions.png" />
 
                     <!-- Row 3 -->
                     <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">
@@ -177,7 +177,7 @@
             <!-- Wilkinson Power Divider -->
             <TabItem x:Name="powDivWilkTab">
                 <TabItem.Header>
-                    <Image Source="Images/Attenuators/TeeAttenuator.png" Height="50" Width="50" />
+                    <Image Source="Images/PowerDividers/WilkinsonPowerDivider.png" Height="50" Width="50" />
                 </TabItem.Header>
 
                 <Grid>
@@ -199,7 +199,7 @@
                     <Button Grid.Column="1" Grid.Row="0" Template="{StaticResource HelpTemp}" Style="{StaticResource HelpStyle}" Click="Help_Button_Click" />
 
                     <!-- Row 2 -->
-                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/Attenuators/TeeAttenuator-Dimensions.png" />
+                    <Image Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Source="Images/PowerDividers/WilkinsonPowerDivider-Dimensions.png" />
 
                     <!-- Row 3 -->
                     <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Vertical">

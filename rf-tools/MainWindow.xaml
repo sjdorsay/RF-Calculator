@@ -69,7 +69,9 @@
                     <Image Source="Images/Filters/Filter.png" />
                 </Button>
 
-                <Button Click="Button_PowerDivider" Background="SlateGray"/>
+                <Button Click="Button_PowerDivider" Background="SlateGray" >
+                    <Image Source="Images/PowerDividers/PowerDivider.png" />
+                </Button>
                 <Button Click="Button_UnderConstruction" Background="SlateGray"/>
                 <Button Click="Button_UnderConstruction" Background="SlateGray"/>
             </WrapPanel>

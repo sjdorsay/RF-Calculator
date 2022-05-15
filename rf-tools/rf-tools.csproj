@@ -399,6 +399,11 @@
     <None Include="HelpGuide\assets\webfonts\fa-brands-400.eot">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Resource Include="Images\PowerDividers\PowerDivider.png" />
+    <Resource Include="Images\PowerDividers\ResistivePowerDivider-Dimensions.png" />
+    <Resource Include="Images\PowerDividers\ResistivePowerDivider.png" />
+    <Resource Include="Images\PowerDividers\WilkinsonPowerDivider-Dimensions.png" />
+    <Resource Include="Images\PowerDividers\WilkinsonPowerDivider.png" />
     <Content Include="SQLite Database\SqliteDB.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

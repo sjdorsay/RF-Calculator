@@ -421,8 +421,7 @@ namespace rf_tools
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+            string DocuPath = DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
             adapter.AddSource(1, 0, new LTSpiceCoords(-64, 16, 0));
             adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
@@ -440,7 +439,6 @@ namespace rf_tools
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)resPowDiv.Tolerance / 100);
 
-            DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
             File.WriteAllText(DocuPath, adapter.ToString());
         }
 

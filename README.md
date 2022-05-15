@@ -16,16 +16,20 @@ TO DO:
 - [x] Add Transmission Line design tool
 - [x] Add Filter design tool
 - [x] Add Attenuator design tool
-- [ ] Add Power Divider design tool
-- [ ] Add Phase Shifter design tool
-- [ ] Add coupler design tool
+- [x] Add Power Divider design tool
+- [ ] Add Phase Shifter design tool (optional)
+- [ ] Add Coupler design tool
 
 ## Calculators
 TO DO:
-- [ ] Add IP3 / IM Calculator
-- [ ] Add Frequency Planning tool
-- [ ] Add Link Budget tool
-
+- [x] Add IP3 / IM Calculator
+- [ ] Add frequency planning tool
+- ADC sampling, nyquist zone folding
+- Optionally add IM products
+- Optionally add NR and LTE bands
+- [ ] Add impedance conversion tool
+- [ ] Add smith chart (optional - maybe too difficult)
+- [ ] Add Link Budget tool (optional - maybe too difficult)
 
 ## Help Guide
 TO DO:
@@ -52,4 +56,3 @@ TO DO:
 - Add applications / notes section
 - Add references
 - [x] Add functionality to help buttons
-
