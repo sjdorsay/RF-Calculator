@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:rf_tools"
         mc:Ignorable="d"
         Background="Gray"
+        Closing="Window_Closing"
         Title="Filter" Height="500" Width="600">
 
     <Window.Resources>

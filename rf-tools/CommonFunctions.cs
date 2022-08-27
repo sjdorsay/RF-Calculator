@@ -113,7 +113,7 @@ namespace rf_tools
             /**Angle Conversion**/
             if ("deg" == unitOut) scale = 180 / Math.PI;
 
-            return (scale * val);
+            return scale * val;
         }
 
         /** Convert to Engineering Units **/
@@ -155,14 +155,66 @@ namespace rf_tools
             return output;
         }
 
+        // Find maximum or minimum of a function based on tolerance
+        internal static double FindWorstMinMax(string type, double tol, double[] nomVals, Func<double[], double> function)
+        {
+            // Instantiate all the required variables
+            int Ntot, Nvals;
+            double tempVal, worstVal;
+            double[] tempVals = new double[nomVals.Length];
+
+            type.ToLower();
+
+            // Setup the initial case of the variables
+            worstVal = function(nomVals);
+
+            // Gather the number of values
+            Nvals = nomVals.Length;
+            Ntot = (int)Math.Floor(Math.Pow(2, Nvals));
+
+            // Find the minimum value
+            for (int i = 0; i < Ntot; i++)
+            {
+                for (int j = 0; j < Nvals; j++)
+                {
+                    if (0 == ((1 << j) & i))
+                    {
+                        tempVals[j] = (1 - tol) * nomVals[j];
+                    }
+                    else
+                    {
+                        tempVals[j] = (1 + tol) * nomVals[j];
+                    }
+                }
+
+                // Calculate the current value
+                tempVal = function(tempVals);
+
+                //Find minimum value
+                if ("min" == type)
+                    if (tempVal < worstVal)
+                        worstVal = tempVal;
+
+                // Find maximum value
+                if ("max" == type)
+                    if (tempVal > worstVal)
+                        worstVal = tempVal;
+            }
+
+            // Return the worst-case value recorded
+            return worstVal;
+        }
+
         // Load file dialog
         internal static string OpenFile(string extension, string filter)
         {
             string location = "hello";
 
-            OpenFileDialog openFile = new OpenFileDialog();
-            openFile.DefaultExt = extension;
-            openFile.Filter = filter;
+            OpenFileDialog openFile = new OpenFileDialog
+            {
+                DefaultExt = extension,
+                Filter = filter
+            };
 
             var browsefile = openFile.ShowDialog();
 
@@ -179,9 +231,11 @@ namespace rf_tools
         {
             string location = "hello";
 
-            SaveFileDialog openFile = new SaveFileDialog();
-            openFile.DefaultExt = extension;
-            openFile.Filter = filter;
+            SaveFileDialog openFile = new SaveFileDialog
+            {
+                DefaultExt = extension,
+                Filter = filter
+            };
 
             var browsefile = openFile.ShowDialog();
 

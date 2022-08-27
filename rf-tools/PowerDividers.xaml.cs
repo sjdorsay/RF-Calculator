@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
-using rf_tools.Adapters;
 
 namespace rf_tools
 {
@@ -152,7 +151,6 @@ namespace rf_tools
     {
         private bool powDivRunSynthesis = false;
         private bool powDivRunEvaluate = false;
-        private bool genReport = false;
 
         private readonly ResPowerDivider resPowDiv = new ResPowerDivider();
         private readonly WilkPowerDivider wilkPowDiv = new WilkPowerDivider();
@@ -421,7 +419,7 @@ namespace rf_tools
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
-            string DocuPath = DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
+            string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
             adapter.AddSource(1, 0, new LTSpiceCoords(-64, 16, 0));
             adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
@@ -445,7 +443,8 @@ namespace rf_tools
         /** Generate and Export PDF Report **/
         private void PowDiv_Res_Export_Report()
         {
-            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+            // Keep error list happy
+            // string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
 
             // 1. Ideal Parameters
             // 1a. Number of Ports
@@ -618,7 +617,8 @@ namespace rf_tools
         /** Generate and Export PDF Report **/
         private void PowDiv_Wilk_Export_Report()
         {
-            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+            // Keep error list happy
+            // string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
 
             // 1. Ideal Parameters
             // 1a. System Impedance
@@ -746,9 +746,7 @@ namespace rf_tools
         private void PowDiv_Bail_Export_LTSpice()
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
-
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+            string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
             adapter.AddSource(1, 0, new LTSpiceCoords(-64, 16, 0));
             adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
@@ -766,14 +764,14 @@ namespace rf_tools
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)resPowDiv.Tolerance / 100);
 
-            DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
             File.WriteAllText(DocuPath, adapter.ToString());
         }
 
         /** Generate and Export PDF Report **/
         private void PowDiv_Bail_Export_Report()
         {
-            string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+            // Keep error list happy
+            // string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
 
             // 1. Ideal Parameters
             _ = bailPowDiv.ImpedQuartWave;

@@ -12,12 +12,26 @@ namespace rf_tools
             InitializeComponent();
         }
 
+        /*******************
+         * Library Buttons *
+         *******************/
+        // Opens the applications related to library operation
+        private void Button_Library(object sender, RoutedEventArgs e)
+        {
+            Library libWindow = new Library();
+            _ = libWindow.ShowDialog();
+        }
+
         private void Button_UnderConstruction(object sender, RoutedEventArgs e)
         {
             UnderConstruction ucWindow = new UnderConstruction();
             _ = ucWindow.ShowDialog();
         }
 
+        /*****************
+        * Design Buttons *
+        ******************/
+        // Opens the applications related to library operation
         private void Button_Attenuator(object sender, RoutedEventArgs e)
         {
             Attenuators attWindow = new Attenuators();
@@ -42,16 +56,22 @@ namespace rf_tools
             _ = powDividerWindow.ShowDialog();
         }
 
+        /*********************
+        * Calculator Buttons *
+        **********************/
+        // Opens the applications related to basic calculation operations
         private void Button_Intermodulation(object sender, RoutedEventArgs e)
         {
             Intermods intermodWindow = new Intermods();
             _ = intermodWindow.ShowDialog();
         }
 
-        private void Button_Library(object sender, RoutedEventArgs e)
+        private void Button_Impedance(object sender, RoutedEventArgs e)
         {
-            Library libWindow = new Library();
-            _ = libWindow.ShowDialog();
+            Impedance impedanceWindow = new Impedance();
+            _ = impedanceWindow.ShowDialog();
         }
+
+
     }
 }

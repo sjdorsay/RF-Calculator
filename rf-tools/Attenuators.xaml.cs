@@ -6,13 +6,18 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using TextAlignment = iText.Layout.Properties.TextAlignment;
-using rf_tools.Adapters;
 
-// iText7 PDF .NET Module
-
+/* To Do:
+ * [ ] Create LTSpice export tool for reflective attenuator
+ * [x] Create Report export tool for reflective attenuator
+ * [x] Add Power rating for BTEE, and TEE
+ * [x] Verify and review the generated reports
+ * [ ] Verify and review the generated circuits
+ * [ ] Update the attenuator HTML document
+ */
 namespace rf_tools
 {
-    public class Attenuator : INotifyPropertyChanged
+    internal class Attenuator : INotifyPropertyChanged
     {
         private double impedance;
 
@@ -53,7 +58,7 @@ namespace rf_tools
         }
     }
 
-    public class PiAttenuator : Attenuator
+    internal class PiAttenuator : Attenuator
     {
         private double res1;
         private double res2;
@@ -71,7 +76,7 @@ namespace rf_tools
         }
     }
 
-    public class TeeAttenuator : Attenuator
+    internal class TeeAttenuator : Attenuator
     {
         private double res1;
         private double res2;
@@ -89,7 +94,7 @@ namespace rf_tools
         }
     }
 
-    public class BTeeAttenuator : Attenuator
+    internal class BTeeAttenuator : Attenuator
     {
         private double res1;
         private double res2;
@@ -121,7 +126,7 @@ namespace rf_tools
         }
     }
 
-    public class ReflAttenuator : Attenuator
+    internal class ReflAttenuator : Attenuator
     {
         private double res1;
         private double res2;
@@ -152,6 +157,8 @@ namespace rf_tools
         private readonly BTeeAttenuator btee_atten = new BTeeAttenuator();
         private readonly ReflAttenuator refl_atten = new ReflAttenuator();
 
+        private readonly int nDigits = 3;
+
         /** Attenuator Initilazation Function **/
         public Attenuators()
         {
@@ -163,114 +170,166 @@ namespace rf_tools
             attReflTab.DataContext = refl_atten;
         }
 
-        /***************************/
-        /** PI Attenuator Section **/
-        /***************************/
-
-        /** -------------------------- **/
-        /** Synthesis Function Section **/
-        /** -------------------------- **/
-
+        /*******************/
+        /** PI Attenuator **/
+        /*******************/
+        #region PI
+        /** ------------------- **/
+        /** Synthesis Functions **/
+        /** ------------------- **/
         /** Calculate Series Resistor of PI Attenuator **/
         private double Atten_PI_Synth_GetSeriesRes()
         {
+            // Instantiate variables
             double rser = 0;
             double a = Math.Pow(10, pi_atten.Attenuation / 20);
             double imped = pi_atten.Impedance;
             double tol = pi_atten.Tolerance;
 
+            // If a = 1 there will be calulation errors.
+            // The a = 1 case corresponds to 0 dB attenuator.
+            // To include 0 dB in the calculator the rser has
+            // an inital value of 0 Ohms
             if (1 < a)
             {
                 rser = imped * (Math.Pow(a, 2) - 1) / (2 * a);
             }
 
+            // Calculate the industry standard resistor value
+            // with the selected tolerance
             return CommonFunctions.GetStdResistor(rser, tol);
         }
 
         /** Calculate Shunt Resistor of PI Attenuator **/
         private double Atten_PI_Synth_GetShuntRes()
         {
+            // Instantiate variables
             double rshunt = 1e6;
             double a = Math.Pow(10, pi_atten.Attenuation / 20);
             double imped = pi_atten.Impedance;
             double tol = pi_atten.Tolerance;
 
+            // If a = 1 there will be calulation errors.
+            // The a = 1 case corresponds to 0 dB attenuator.
+            // To include 0 dB in the calculator the rshunt has
+            // an inital value of 1 MOhms
             if (1 < a)
             {
                 rshunt = imped * (a + 1) / (a - 1);
             }
 
+            // Calculate the industry standard resistor value
+            // with the selected tolerance
             return CommonFunctions.GetStdResistor(rshunt, tol);
         }
 
-        /** ------------------------- **/
-        /** Evaluate Function Section **/
-        /** ------------------------- **/
-
+        /** ------------------ **/
+        /** Evaluate Functions **/
+        /** ------------------ **/
         /** Calculate Attenuation of PI Attenuator **/
         private double Atten_PI_Eval_GetAttenuation()
         {
+            // Instantiate variables
             double atten;
-
             double r1, r2;
 
             // The attenuation can be calculated using the PI attenuator
-            // algorithm with one adjustment.
-            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
+            // We can assume r1 = r3
             r1 = pi_atten.Res1;
             r2 = pi_atten.Res2;
 
+            // Calculate nominal attenuation
             atten = Atten_PI_GetAttenuation(r1, r2, r1);
 
+            // Return the attenuation value
             return atten;
         }
 
         /** Calculate Attenuation of PI Attenuator **/
         private double Atten_PI_Eval_GetWorstAttenuation()
         {
+            // Instantiate variables
             double attenLow, attenHigh, attenNom;
             double attenWorst;
-
             double r1, r2;
+            double tol = pi_atten.Tolerance / 100.0;
 
-            // The attenuation can be calculated using the PI attenuator
-            // algorithm with one adjustment.
-            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
-
-            // Highest Attenuation
-            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
-
-            attenHigh = Atten_PI_GetAttenuation(r1, r2, r1);
-
-            // Lowest Attenuation
-            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
-
-            attenLow = Atten_PI_GetAttenuation(r1, r2, r1);
-
-            // Nominal Attenuation
+            // Nominal Resistor Values to be scaled by the tolerance
             r1 = pi_atten.Res1;
             r2 = pi_atten.Res2;
 
+            // Start all the variables off at the nominal value
             attenNom = Atten_PI_GetAttenuation(r1, r2, r1);
 
+            // Find the maximum and minimum attenuation
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r1 }, Atten_PI_GetAttenuation);
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r1 }, Atten_PI_GetAttenuation);
+
+            // Find the worst-case value by comparing the results
             attenWorst = (attenHigh - attenNom) > (attenNom - attenLow) ? attenHigh : attenLow;
 
             return attenWorst;
         }
 
-        /** Calculate Input Impedanceof PI Attenuator **/
-        private double Atten_PI_Eval_GetImpedance()
+        /** Calculate Minimum Attenuation of TEE Attenuator **/
+        private double Atten_PI_Eval_GetMinAttenuation()
         {
-            double imped;
-
+            // Instantiate variables
+            double attenLow;
+            double tol;
             double r1, r2, r3;
 
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
             r1 = pi_atten.Res1;
             r2 = pi_atten.Res2;
             r3 = pi_atten.Res1;
 
+            // Convert tolerance to decimal (from %)
+            tol = pi_atten.Tolerance / 100.0;
+
+            // Get the minimum attenuation
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r3 }, Atten_PI_GetAttenuation);
+
+            return attenLow;
+        }
+
+        /** Calculate Maximum Attenuation of TEE Attenuator **/
+        private double Atten_PI_Eval_GetMaxAttenuation()
+        {
+            // Instantiate variables
+            double attenHigh;
+            double tol;
+            double r1, r2, r3;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+            r3 = pi_atten.Res1;
+
+            // Convert tolerance to decimal (from %)
+            tol = pi_atten.Tolerance / 100.0;
+
+            // Get the maximum attenuation
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r3 }, Atten_PI_GetAttenuation);
+
+            return attenHigh;
+        }
+
+        /** Calculate Input Impedanceof PI Attenuator **/
+        private double Atten_PI_Eval_GetImpedance()
+        {
+            // Instantiate variables
+            double imped;
+            double r1, r2, r3;
+
+            // Gather resistor values
+            r1 = pi_atten.Res1;
+            r2 = pi_atten.Res2;
+            r3 = pi_atten.Res1;
+
+            // Use the resistor values to find the impedance
             imped = Atten_PI_GetImpedance(r1, r2, r3);
 
             return imped;
@@ -279,36 +338,24 @@ namespace rf_tools
         /** Calculate Input Impedanceof PI Attenuator **/
         private double Atten_PI_Eval_GetWorstImpedance()
         {
-            // TO DO:
-            // The run function has a nice way to find worst-case.
-            // check this out
+            // Instantiate variables
             double impedLow, impedHigh, impedNom;
             double impedWorst;
+            double r1, r2;
+            double tol = pi_atten.Tolerance / 100.0;
 
-            double r1, r2, r3;
-
-            // Nominal Impedance
+            // Nominal Resistor Values to be scaled by the tolerance
             r1 = pi_atten.Res1;
             r2 = pi_atten.Res2;
-            r3 = pi_atten.Res1;
 
-            impedNom = Atten_PI_GetImpedance(r1, r2, r3);
+            // Start all the variables off at the nominal value
+            impedNom = Atten_PI_GetImpedance(r1, r2, r1);
 
-            // Highest Impedance
-            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
-            r3 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
+            // Find the maximum and minimum attenuation
+            impedLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r1 }, Atten_PI_GetImpedance);
+            impedHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r1 }, Atten_PI_GetImpedance);
 
-            impedHigh = Atten_PI_GetImpedance(r1, r2, r3);
-
-            // Lowest Impedance
-            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
-            r3 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-
-            impedLow = Atten_PI_GetImpedance(r1, r2, r3);
-
-            // Find the worst-case impedance
+            // Find the worst-case value by comparing the results
             impedWorst = (impedHigh - impedNom) > (impedNom - impedLow) ? impedHigh : impedLow;
 
             return impedWorst;
@@ -317,22 +364,30 @@ namespace rf_tools
         /** -------------------------- **/
         /** Auxiliary Function Section **/
         /** -------------------------- **/
-
         /** Calculate Attenuation of PI Attenuator **/
-        private double Atten_PI_GetAttenuation(double r1, double r2, double r3)
+        private double Atten_PI_GetAttenuation(params double[] rList)
         {
             double imped;
             double a;
             double atten;
+            double r1, r2, r3;
             double[] ABCD = new double[4];
 
+            // Split params into respective values
+            r1 = rList[0];
+            r2 = rList[1];
+            r3 = rList[2];
+
+            // Calculate the ABCD parameters
             ABCD[0] = 1 + (r2 / r3);
             ABCD[1] = r2;
             ABCD[3] = 1 + (r2 / r1);
             ABCD[2] = (1 / r1) + ABCD[3] * (1 / r3);
 
+            // Use the ABCD matrix to calculate the impedance
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
+            // Use the ABCD matrix to calculate the attenuation
             a = (ABCD[0] + ABCD[1] / imped + ABCD[2] * imped + ABCD[3]) / 2;
             atten = 20 * Math.Log10(Math.Abs(a));
 
@@ -340,29 +395,37 @@ namespace rf_tools
         }
 
         /** Calculate Input Impedanceof PI Attenuator **/
-        private double Atten_PI_GetImpedance(double r1, double r2, double r3)
+        private double Atten_PI_GetImpedance(params double[] rList)
         {
             double imped;
+            double r1, r2, r3;
             double[] ABCD = new double[4];
 
+            // Split params into respective values
+            r1 = rList[0];
+            r2 = rList[1];
+            r3 = rList[2];
+
+            // Calculate the ABCD parameters
             ABCD[0] = 1 + (r2 / r3);
             ABCD[1] = r2;
             ABCD[3] = 1 + (r2 / r1);
             ABCD[2] = (1 / r1) + ABCD[3] * (1 / r3);
 
+            // Use the ABCD matrix to calculate the impedance
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
         }
 
-        /** Calculate Input Impedanceof PI Attenuator **/
+        /** Calculate Maximum Power Rating PI Attenuator **/
         private double Atten_PI_GetPowerRating()
         {
             double a;
             double pwrRating;
 
             a = Math.Pow(10, pi_atten.Attenuation / 20);
-            pwrRating = 0.0625 * (a + 1) / (a - 1);
+            
             pwrRating = 0.0625 * a * a / (a - 1);
 
             return pwrRating;
@@ -373,35 +436,37 @@ namespace rf_tools
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
-            string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
-
+            string docPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
+            
             adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+
             adapter.AddResistor(1, 0, new LTSpiceCoords(0, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
+            
             adapter.AddResistor(2, 1, new LTSpiceCoords(144, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", pi_atten.Res2));
+            
             adapter.AddResistor(2, 0, new LTSpiceCoords(128, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
+            
             adapter.AddResistor(2, 0, new LTSpiceCoords(176, 16, 0), "50");
 
-            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
-            adapter.AddParameter(0, -64, "tolR", (float)pi_atten.Tolerance / 100);
-
-            File.WriteAllText(DocuPath, adapter.ToString());
+            File.WriteAllText(docPath, adapter.ToString());
         }
 
         /** Generate and Export PDF Report **/
         private void Atten_PI_Export_Report()
         {
-            /** Setup Document Read/Write **/
             // Get file path to user documents
             string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+
+            // Round all values to the number of digits
+            int digits = 3;
 
             // Must have write permissions to the path folder
             PdfWriter writer = new PdfWriter(docPath);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
-
 
             /** Setup Document Formatting **/
             // Setup Title formatting
@@ -409,10 +474,18 @@ namespace rf_tools
                .SetTextAlignment(TextAlignment.CENTER)
                .SetFontSize(24);
 
+            // Setup Sub-Title formatting
+            Paragraph subtitle = new Paragraph("By RF Design Toolkit")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetBold()
+               .SetItalic()
+               .SetFontSize(20);
+
             // Setup Header formatting
             Paragraph header = new Paragraph()
                .SetTextAlignment(TextAlignment.LEFT)
                .SetUnderline()
+               .SetBold()
                .SetFontSize(16);
 
             // Setup body formatting
@@ -420,23 +493,22 @@ namespace rf_tools
                .SetTextAlignment(TextAlignment.LEFT)
                .SetFontSize(12);
 
-            // Keeping max power calculations
-            double a = Math.Pow(10, pi_atten.Attenuation / 20);
-            double maxPwr = 18 + 10 * (2.647 / (2.647 + a));
-
             /** Generate Document **/
             // Add title
             document.Add(title);
+            document.Add(subtitle);
 
             // Section 1 - Attenuator
-            header.Add("1. Attenuator");
+            header.Add("1. Attenuator Design");
 
             // Gather ideal values
-            body.Add(string.Format("Atten = {0} dB\n", pi_atten.Attenuation));
-            body.Add(string.Format("Z0 = {0} dB\n", pi_atten.Impedance));
+            body.Add(string.Format("Atten = {0} dB\n", Math.Round(pi_atten.Attenuation, digits)));
+            body.Add(string.Format("Z0 = {0} Ohm\n", Math.Round(pi_atten.Impedance, digits)));
             body.Add("\n");
-            body.Add(string.Format("R1 = {0} dB\n", pi_atten.Res1));
-            body.Add(string.Format("R2 = {0} dB\n", pi_atten.Res2));
+            body.Add(string.Format("The resistors have been calculated using {0}% standard resistor values.\n", pi_atten.Tolerance));
+            body.Add(string.Format("R1 = {0} Ohm\n", pi_atten.Res1));
+            body.Add(string.Format("R2 = {0} Ohm\n", pi_atten.Res2));
+            body.Add(string.Format("R1 = {0} Ohm\n", pi_atten.Res1));
 
             // Add section header and body to document
             document.Add(header);
@@ -447,15 +519,18 @@ namespace rf_tools
             body.GetChildren().Clear();
 
             // Section 2 - Attenuator
-            header.Add("2. Attenuator");
+            header.Add("2. Attenuator Performance");
 
             // Gather ideal values
-            body.Add(string.Format("Atten_nom = {0} dB\n", Atten_PI_Eval_GetAttenuation()));
-            body.Add(string.Format("Atten_worst = {0} dB\n", Atten_PI_Eval_GetWorstAttenuation()));
+            body.Add(string.Format("Attenuation\n"));
+            body.Add(string.Format("min = {0} dB\n", Math.Round(Atten_PI_Eval_GetMinAttenuation(), digits)));
+            body.Add(string.Format("nom = {0} dB\n", Math.Round(Atten_PI_Eval_GetAttenuation(), digits)));
+            body.Add(string.Format("max = {0} dB\n", Math.Round(Atten_PI_Eval_GetMaxAttenuation(), digits)));
             body.Add("\n");
-            body.Add(string.Format("Z0_nom = {0} dB\n", Atten_PI_Eval_GetImpedance()));
-            body.Add(string.Format("Z0_worst = {0} dB\n", Atten_PI_Eval_GetWorstImpedance()));
-            
+            body.Add(string.Format("Characteristic Impedance\n"));
+            body.Add(string.Format("nom = {0} Ohm\n", Math.Round(Atten_PI_Eval_GetImpedance(), digits)));
+            body.Add(string.Format("worst = {0} Ohm\n", Math.Round(Atten_PI_Eval_GetWorstImpedance(), digits)));
+
             // Add section header and body to document
             document.Add(header);
             document.Add(body);
@@ -467,9 +542,13 @@ namespace rf_tools
             // Section 3 - Power Handling
             header.Add("3. Power Handling");
 
-            body.Add("Maximum: " + maxPwr + " dBm\n");
-            body.Add("Maximum: " + Atten_PI_GetPowerRating() + " W\n");
-            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W, at room temperature and 0% derated.\n");
+            double pwr_mw = Atten_PI_GetPowerRating() * 1000;
+            double pwr_dbm = 10 * Math.Log10(pwr_mw);
+
+            body.Add("Maximum:\n");
+            body.Add(Math.Round(pwr_mw, digits) + " mW\n");
+            body.Add(Math.Round(pwr_dbm, digits) + " dBm\n\n");
+            body.Add("Note: \nThe maximum input power assumes resistors rated for 1/16 W, at room temperature, and 0% derated.\n");
 
             // Add section header and body to document
             document.Add(header);
@@ -481,14 +560,6 @@ namespace rf_tools
         /** PI Attenuator - Synthesis / Evalute **/
         public void Atten_PI_Run()
         {
-            // Initialize resistor values
-            double r1 = 1e6;
-            double r2 = 0;
-
-            double tol;
-
-            bool genReport = pi_atten.GenReport;
-
             if (attenRunSynthesis)
             {
                 // Call resistor get functions
@@ -499,59 +570,16 @@ namespace rf_tools
             if (attenRunEvaluate)
             {
                 // Calculate attenuation and impedance based on resistors provided
-                pi_atten.Attenuation = Atten_PI_Eval_GetAttenuation();
-                pi_atten.Impedance = Atten_PI_Eval_GetImpedance();
-            }
-
-            if (genReport)
-            {
-                double[] attenuation = new double[3];
-
-                attenuation[0] = pi_atten.Attenuation;
-                attenuation[1] = pi_atten.Attenuation;
-                attenuation[2] = pi_atten.Attenuation;
-
-                double[] impedance = new double[3];
-
-                impedance[0] = pi_atten.Impedance;
-                impedance[1] = pi_atten.Impedance;
-                impedance[2] = pi_atten.Impedance;
-
-                tol = pi_atten.Tolerance / 100;
-
-                double tempAtten;
-                double tempImpedance;
-
-                int Ntot = 8;
-
-                // Find the maximum and minimum attenuation and impedance
-                for (int i = 0; i < Ntot; i++)
-                {
-                    tempAtten = Atten_PI_GetAttenuation(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r1 * (1 + (2 * (4 & i) - 1) * tol));
-
-                    tempImpedance = Atten_PI_GetImpedance(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r1 * (1 + (2 * (4 & i) - 1) * tol));
-
-                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
-                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
-
-                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
-                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
-                }
-
-                Gen_Report(attenuation, impedance, new double[] { r1, r2, r1 });
+                pi_atten.Attenuation = Math.Round(Atten_PI_Eval_GetAttenuation(), nDigits);
+                pi_atten.Impedance = Math.Round(Atten_PI_Eval_GetImpedance(), nDigits);
             }
         }
+        #endregion
 
         /****************************/
         /** Tee Attenuator Section **/
         /****************************/
-
+        #region TEE
         /** -------------------------- **/
         /** Synthesis Function Section **/
         /** -------------------------- **/
@@ -561,7 +589,6 @@ namespace rf_tools
         {
             // Initialize resistor values for a 0 dB attenuator
             double rser = 0;
-
             double a;
             double imped;
             double tol;
@@ -586,7 +613,6 @@ namespace rf_tools
         {
             // Initialize resistor values for a 0 dB attenuator
             double rshunt = 1e6;
-
             double a;
             double imped;
             double tol;
@@ -617,11 +643,11 @@ namespace rf_tools
 
             double r1, r2;
 
-            // The attenuation can be calculated using the PI attenuator
+            // The attenuation can be calculated using the TEE attenuator
             // algorithm with one adjustment.
-            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
-            r1 = pi_atten.Res1;
-            r2 = pi_atten.Res2;
+            // 1. We can assume r3 = r1
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
 
             atten = Atten_TEE_GetAttenuation(r1, r2, r1);
 
@@ -631,36 +657,73 @@ namespace rf_tools
         /** Calculate Attenuation of TEE Attenuator **/
         private double Atten_TEE_Eval_GetWorstAttenuation()
         {
+            // Instantiate variables
             double attenLow, attenHigh, attenNom;
             double attenWorst;
-
             double r1, r2;
+            double tol = tee_atten.Tolerance / 100.0;
 
-            // The attenuation can be calculated using the PI attenuator
-            // algorithm with one adjustment.
-            // 1. We can assume r1 = r3 since it follows for all the worst cases scenarios
+            // Nominal Resistor Values to be scaled by the tolerance
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
 
-            // Highest Attenuation
-            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
-
-            attenHigh = Atten_TEE_GetAttenuation(r1, r2, r1);
-
-            // Lowest Attenuation
-            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
-
-            attenLow = Atten_TEE_GetAttenuation(r1, r2, r1);
-
-            // Nominal Attenuation
-            r1 = pi_atten.Res1;
-            r2 = pi_atten.Res2;
-
+            // Start all the variables off at the nominal value
             attenNom = Atten_TEE_GetAttenuation(r1, r2, r1);
 
+            // Find the maximum and minimum attenuation
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r1 }, Atten_TEE_GetAttenuation);
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r1 }, Atten_TEE_GetAttenuation);
+
+            // Find the worst-case value by comparing the results
             attenWorst = (attenHigh - attenNom) > (attenNom - attenLow) ? attenHigh : attenLow;
 
             return attenWorst;
+        }
+
+        /** Calculate Minimum Attenuation of TEE Attenuator **/
+        private double Atten_TEE_Eval_GetMinAttenuation()
+        {
+            // Instantiate variables
+            double attenLow;
+            double tol;
+            double r1, r2, r3;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
+            r3 = tee_atten.Res1;
+
+            // Convert tolerance to decimal (from %)
+            tol = tee_atten.Tolerance / 100.0;
+
+            // Get the minimum attenuation
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r3 }, Atten_TEE_GetAttenuation);
+
+            return attenLow;
+        }
+
+        /** Calculate Maximum Attenuation of TEE Attenuator **/
+        private double Atten_TEE_Eval_GetMaxAttenuation()
+        {
+            // Instantiate variables
+            double attenHigh;
+            double tol;
+            double r1, r2, r3;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
+            r3 = tee_atten.Res1;
+
+            // Convert tolerance to decimal (from %)
+            tol = tee_atten.Tolerance / 100.0;
+
+            // Get the maximum attenuation
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r3 }, Atten_TEE_GetAttenuation);
+
+            return attenHigh;
         }
 
         /** Calculate Input Impedanceof TEE Attenuator **/
@@ -670,9 +733,9 @@ namespace rf_tools
 
             double r1, r2, r3;
 
-            r1 = pi_atten.Res1;
-            r2 = pi_atten.Res2;
-            r3 = pi_atten.Res1;
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
+            r3 = tee_atten.Res1;
 
             imped = Atten_TEE_GetImpedance(r1, r2, r3);
 
@@ -682,36 +745,25 @@ namespace rf_tools
         /** Calculate Input Impedance of TEE Attenuator **/
         private double Atten_TEE_Eval_GetWorstImpedance()
         {
-            // TO DO:
-            // The run function has a nice way to find worst-case.
-            // check this out
+            // Instantiate variables
             double impedLow, impedHigh, impedNom;
             double impedWorst;
 
-            double r1, r2, r3;
+            double r1, r2;
+            double tol = tee_atten.Tolerance / 100.0;
 
-            // Nominal Impedance
-            r1 = pi_atten.Res1;
-            r2 = pi_atten.Res2;
-            r3 = pi_atten.Res1;
+            // Nominal Resistor Values to be scaled by the tolerance
+            r1 = tee_atten.Res1;
+            r2 = tee_atten.Res2;
 
-            impedNom = Atten_TEE_GetImpedance(r1, r2, r3);
+            // Start all the variables off at the nominal value
+            impedNom = Atten_TEE_GetAttenuation(r1, r2, r1);
 
-            // Highest Impedance
-            r1 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 + pi_atten.Tolerance / 100);
-            r3 = pi_atten.Res1 * (1 + pi_atten.Tolerance / 100);
+            // Find the maximum and minimum attenuation
+            impedLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r1 }, Atten_TEE_GetImpedance);
+            impedHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r1 }, Atten_TEE_GetImpedance);
 
-            impedHigh = Atten_TEE_GetImpedance(r1, r2, r3);
-
-            // Lowest Impedance
-            r1 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-            r2 = pi_atten.Res2 * (1 - pi_atten.Tolerance / 100);
-            r3 = pi_atten.Res1 * (1 - pi_atten.Tolerance / 100);
-
-            impedLow = Atten_TEE_GetImpedance(r1, r2, r3);
-
-            // Find the worst-case impedance
+            // Find the worst-case value by comparing the results
             impedWorst = (impedHigh - impedNom) > (impedNom - impedLow) ? impedHigh : impedLow;
 
             return impedWorst;
@@ -722,20 +774,29 @@ namespace rf_tools
         /** -------------------------- **/
 
         /** Calculate Attenuation of Tee Attenuator **/
-        private double Atten_TEE_GetAttenuation(double r1, double r2, double r3)
+        private double Atten_TEE_GetAttenuation(params double[] rList)
         {
             double imped;
             double a;
             double atten;
+            double r1, r2, r3;
             double[] ABCD = new double[4];
 
+            // Split params into respective values
+            r1 = rList[0];
+            r2 = rList[1];
+            r3 = rList[2];
+
+            // Calculate ABCD parameters of the TEE Attenuator
             ABCD[0] = 1 + (r1 / r2);
             ABCD[1] = r1 + r3 * ABCD[0];
             ABCD[2] = 1 / r2;
             ABCD[3] = 1 + (r3 / r2);
 
+            // Use ABCD parameters to calculate the impedance
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
+            // Use ABCD parameters and impedance to calculate the attenuation
             a = (ABCD[0] + ABCD[1] / imped + ABCD[2] * imped + ABCD[3]) / 2;
             atten = 20 * Math.Log10(Math.Abs(a));
 
@@ -743,16 +804,24 @@ namespace rf_tools
         }
 
         /** Calculate Input Impedance of Tee Attenuator **/
-        private double Atten_TEE_GetImpedance(double r1, double r2, double r3)
+        private double Atten_TEE_GetImpedance(params double[] rList)
         {
             double imped;
+            double r1, r2, r3;
             double[] ABCD = new double[4];
 
+            // Split params into respective values
+            r1 = rList[0];
+            r2 = rList[1];
+            r3 = rList[2];
+
+            // Calculate ABCD parameters of the TEE Attenuator
             ABCD[0] = 1 + (r1 / r2);
             ABCD[1] = r1 + r3 * ABCD[0];
             ABCD[2] = 1 / r2;
             ABCD[3] = 1 + (r3 / r2);
 
+            // Use ABCD parameters to calculate the impedance
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
@@ -761,11 +830,12 @@ namespace rf_tools
         /** Calculate Input Impedanceof TEE Attenuator **/
         private double Atten_TEE_GetPowerRating()
         {
+            // TO DO
             double a;
             double pwrRating;
 
-            a = Math.Pow(10, pi_atten.Attenuation / 20);
-            pwrRating = 0.0625 * (a + 1) / (a - 1);
+            a = Math.Pow(10, tee_atten.Attenuation / 20);
+            
             pwrRating = 0.0625 * a * a / (a - 1);
 
             return pwrRating;
@@ -775,48 +845,64 @@ namespace rf_tools
         private void Atten_TEE_Export_LTSpice()
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
+            
+            // Get file path to save file
+            string docPath = CommonFunctions.SaveFile(".asc", "LTSpice Schematic|.asc");
 
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
-
+            //Add signal source
             adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+
+            // Add TEE Attenuator resistors
             adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
             adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res2));
             adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
+
+            // Add Load resistor
             adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
 
+            // Setup simulation
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)tee_atten.Tolerance / 100);
 
-            File.WriteAllText(DocuPath + "tee_attenuator.asc", adapter.ToString());
+            // Save text to file
+            File.WriteAllText(docPath, adapter.ToString());
         }
 
         /** Generate and Export PDF Report **/
         private void Atten_TEE_Export_Report()
         {
-            /** Setup Document Read/Write **/
             // Get file path to user documents
             string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+
+            // Round all values to the number of digits
+            int digits = 3;
 
             // Must have write permissions to the path folder
             PdfWriter writer = new PdfWriter(docPath);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
-
             /** Setup Document Formatting **/
             // Setup Title formatting
-            Paragraph title = new Paragraph("PI Attenuator Report")
+            Paragraph title = new Paragraph("TEE Attenuator Report")
                .SetTextAlignment(TextAlignment.CENTER)
                .SetFontSize(24);
+
+            // Setup Sub-Title formatting
+            Paragraph subtitle = new Paragraph("By RF Design Toolkit")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetBold()
+               .SetItalic()
+               .SetFontSize(20);
 
             // Setup Header formatting
             Paragraph header = new Paragraph()
                .SetTextAlignment(TextAlignment.LEFT)
                .SetUnderline()
+               .SetBold()
                .SetFontSize(16);
 
             // Setup body formatting
@@ -824,23 +910,22 @@ namespace rf_tools
                .SetTextAlignment(TextAlignment.LEFT)
                .SetFontSize(12);
 
-            // Keeping max power calculations
-            double a = Math.Pow(10, pi_atten.Attenuation / 20);
-            double maxPwr = 18 + 10 * (2.647 / (2.647 + a));
-
             /** Generate Document **/
             // Add title
             document.Add(title);
+            document.Add(subtitle);
 
             // Section 1 - Attenuator
-            header.Add("1. Attenuator");
+            header.Add("1. Attenuator Design");
 
             // Gather ideal values
-            body.Add(string.Format("Atten = {0} dB\n", tee_atten.Attenuation));
-            body.Add(string.Format("Z0 = {0} dB\n", tee_atten.Impedance));
+            body.Add(string.Format("Atten = {0} dB\n", Math.Round(tee_atten.Attenuation, digits)));
+            body.Add(string.Format("Z0 = {0} Ohm\n", Math.Round(tee_atten.Impedance, digits)));
             body.Add("\n");
-            body.Add(string.Format("R1 = {0} dB\n", tee_atten.Res1));
-            body.Add(string.Format("R2 = {0} dB\n", tee_atten.Res2));
+            body.Add(string.Format("The resistors have been calculated using {0}% standard resistor values.\n", tee_atten.Tolerance));
+            body.Add(string.Format("R1 = {0} Ohm\n", tee_atten.Res1));
+            body.Add(string.Format("R2 = {0} Ohm\n", tee_atten.Res2));
+            body.Add(string.Format("R1 = {0} Ohm\n", tee_atten.Res1));
 
             // Add section header and body to document
             document.Add(header);
@@ -851,14 +936,17 @@ namespace rf_tools
             body.GetChildren().Clear();
 
             // Section 2 - Attenuator
-            header.Add("2. Attenuator");
+            header.Add("2. Attenuator Performance");
 
             // Gather ideal values
-            body.Add(string.Format("Atten_nom = {0} dB\n", Atten_TEE_Eval_GetAttenuation()));
-            body.Add(string.Format("Atten_worst = {0} dB\n", Atten_TEE_Eval_GetWorstAttenuation()));
+            body.Add(string.Format("Attenuation\n"));
+            body.Add(string.Format("min = {0} dB\n", Math.Round(Atten_TEE_Eval_GetMinAttenuation(), digits)));
+            body.Add(string.Format("nom = {0} dB\n", Math.Round(Atten_TEE_Eval_GetAttenuation(), digits)));
+            body.Add(string.Format("max = {0} dB\n", Math.Round(Atten_TEE_Eval_GetMaxAttenuation(), digits)));
             body.Add("\n");
-            body.Add(string.Format("Z0_nom = {0} dB\n", Atten_TEE_Eval_GetImpedance()));
-            body.Add(string.Format("Z0_worst = {0} dB\n", Atten_TEE_Eval_GetWorstImpedance()));
+            body.Add(string.Format("Characteristic Impedance\n"));
+            body.Add(string.Format("nom = {0} Ohm\n", Math.Round(Atten_TEE_Eval_GetImpedance(), digits)));
+            body.Add(string.Format("worst = {0} Ohm\n", Math.Round(Atten_TEE_Eval_GetWorstImpedance(), digits)));
 
             // Add section header and body to document
             document.Add(header);
@@ -871,9 +959,13 @@ namespace rf_tools
             // Section 3 - Power Handling
             header.Add("3. Power Handling");
 
-            body.Add("Maximum: " + maxPwr + " dBm\n");
-            body.Add("Maximum: " + Atten_TEE_GetPowerRating() + " W\n");
-            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W, at room temperature and 0% derated.\n");
+            double pwr_mw = Atten_TEE_GetPowerRating() * 1000;
+            double pwr_dbm = 10 * Math.Log10(pwr_mw);
+
+            body.Add("Maximum:\n");
+            body.Add(Math.Round(pwr_mw, digits) + " mW\n");
+            body.Add(Math.Round(pwr_dbm, digits) + " dBm\n\n");
+            body.Add("Note: \nThe maximum input power assumes resistors rated for 1/16 W, at room temperature, and 0% derated.\n");
 
             // Add section header and body to document
             document.Add(header);
@@ -885,14 +977,6 @@ namespace rf_tools
         /** Tee Attenuator - Synthesis / Evalute **/
         public void Atten_TEE_Run()
         {
-            // Initialize resistor values for a 0 dB attenuator
-            double r1 = 0;
-            double r2 = 1e6;
-
-            double tol;
-
-            bool genReport = tee_atten.GenReport;
-
             if (attenRunSynthesis)
             {
                 tee_atten.Res1 = Atten_TEE_Synth_GetSeriesRes();
@@ -901,65 +985,231 @@ namespace rf_tools
 
             if (attenRunEvaluate)
             {
-                tee_atten.Attenuation = Atten_TEE_Eval_GetAttenuation();
-                tee_atten.Impedance = Atten_TEE_Eval_GetImpedance();
-            }
-
-            if (genReport)
-            {
-                double[] attenuation = new double[3];
-
-                attenuation[0] = tee_atten.Attenuation;
-                attenuation[1] = tee_atten.Attenuation;
-                attenuation[2] = tee_atten.Attenuation;
-
-                double[] impedance = new double[3];
-
-                impedance[0] = tee_atten.Impedance;
-                impedance[1] = tee_atten.Impedance;
-                impedance[2] = tee_atten.Impedance;
-
-                tol = tee_atten.Tolerance / 100;
-
-                double tempAtten;
-                double tempImpedance;
-
-                int Ntot = 8;
-
-                // Find the maximum and minimum attenuation and impedance
-                for (int i = 0; i < Ntot; i++)
-                {
-                    tempAtten = Atten_TEE_GetAttenuation(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r1 * (1 + (2 * (4 & i) - 1) * tol));
-
-                    tempImpedance = Atten_TEE_GetImpedance(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r1 * (1 + (2 * (4 & i) - 1) * tol));
-
-                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
-                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
-
-                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
-                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
-                }
-
-                Gen_Report(attenuation, impedance, new double[] { r1, r2, r1 });
+                tee_atten.Attenuation = Math.Round(Atten_TEE_Eval_GetAttenuation(), nDigits);
+                tee_atten.Impedance = Math.Round(Atten_TEE_Eval_GetImpedance(), nDigits);
             }
         }
+        #endregion
 
         /************************************/
         /** Bridged Tee Attenuator Section **/
         /************************************/
-        /** Calculate Attenuation of BTee Attenuator **/
-        private double Atten_BTEE_GetAttenuation(double r1, double r2, double r3, double r4)
+        #region BridgedTee
+        //----------------------------//
+        // Synthesis Function Section //
+        //----------------------------//
+        /** Calculate Series Resistor of BTEE Attenuator **/
+        private double Atten_BTEE_Synth_GetSeriesRes()
         {
+            // Initialize resistor values for a 0 dB attenuator
+            double rser = 0;
+
+            // Instantiate useful variables
+            double a = Math.Pow(10, btee_atten.Attenuation / 20);
+            double imped = btee_atten.Impedance;
+            double tol = btee_atten.Tolerance;
+
+            // Generate ideal resistor values
+            if (1 < a)
+            {
+                rser = imped * (a - 1);
+            }
+
+            return CommonFunctions.GetStdResistor(rser, tol);
+        }
+
+        /** Calculate Shunt Resistor of BTEE Attenuator **/
+        private double Atten_BTEE_Synth_GetShuntRes()
+        {
+            // Initialize resistor values for a 0 dB attenuator
+            double rshunt = 1e6;
+
+            // Instantiate useful variables
+            double a = Math.Pow(10, btee_atten.Attenuation / 20);
+            double imped = btee_atten.Impedance;
+            double tol = btee_atten.Tolerance;
+
+            // Generate ideal resistor values
+            if (1 < a)
+            {
+                rshunt = imped / (a - 1);
+            }
+
+            return CommonFunctions.GetStdResistor(rshunt, tol);
+        }
+
+        //---------------------------//
+        // Evaluate Function Section //
+        //---------------------------//
+        /** Calculate Attenuation of BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetAttenuation()
+        {
+            // Instantiate variables
+            double atten;
+            double r1, r2, r3, r4;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res3;
+            r4 = btee_atten.Res4;
+
+            // Calculate the nominal attenuation
+            atten = Atten_BTEE_GetAttenuation(r1, r2, r3, r4);
+
+            return atten;
+        }
+
+        /** Calculate Attenuation of BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetWorstAttenuation()
+        {
+            // Instantiate variables
+            double attenLow, attenHigh, attenNom, attenWorst;
+            double tol;
+            double r1, r2, r3;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            // Assuming R3 = R2
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res4;
+
+            // Convert tolerance to decimal (from %)
+            tol = btee_atten.Tolerance / 100.0;
+
+            // Calculate the Min, Max, and the nominal attenuation for comparison
+            attenNom = Atten_BTEE_GetAttenuation(r1, r2, r2, r3);
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r2, r3 }, Atten_BTEE_GetAttenuation);
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r2, r3 }, Atten_BTEE_GetAttenuation);
+
+            // Find the worst-case value by comparing the results
+            attenWorst = ((attenHigh - attenNom) > (attenNom - attenLow)) ? attenHigh : attenLow;
+
+            return attenWorst;
+        }
+
+        /** Calculate Minimum Attenuation of BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetMinAttenuation()
+        {
+            // Instantiate variables
+            double attenLow;
+            double tol;
+            double r1, r2, r3, r4;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res3;
+            r4 = btee_atten.Res4;
+
+            // Convert tolerance to decimal (from %)
+            tol = btee_atten.Tolerance / 100.0;
+
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r3, r4 }, Atten_BTEE_GetAttenuation);
+
+            return attenLow;
+        }
+
+        /** Calculate Maximum Attenuation of BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetMaxAttenuation()
+        {
+            // Instantiate variables
+            double attenHigh;
+            double tol;
+            double r1, r2, r3, r4;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res3;
+            r4 = btee_atten.Res4;
+
+            // Convert tolerance to decimal (from %)
+            tol = btee_atten.Tolerance / 100.0;
+
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r3, r4 }, Atten_BTEE_GetAttenuation);
+
+            return attenHigh;
+        }
+
+        /** Calculate Input Impedanceof BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetImpedance()
+        {
+            // Instantiate variables
+            double imped;
+            double r1, r2, r3, r4;
+
+            // The impedance can be calculated using the BTEE attenuator
+            // algorithm
+            // Assuming R3 = R2
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res3;
+            r4 = btee_atten.Res4;
+
+            imped = Atten_BTEE_GetImpedance(r1, r2, r3, r4);
+
+            return imped;
+        }
+
+        /** Calculate Input Impedance of BTEE Attenuator **/
+        private double Atten_BTEE_Eval_GetWorstImpedance()
+        {
+            double impedLow, impedHigh, impedNom, impedWorst;
+            double tol;
+            double r1, r2, r3, r4;
+
+            // The attenuation can be calculated using the BTEE attenuator
+            // algorithm
+            r1 = btee_atten.Res1;
+            r2 = btee_atten.Res2;
+            r3 = btee_atten.Res3;
+            r4 = btee_atten.Res4;
+
+            // Convert tolerance to decimal (from %)
+            tol = btee_atten.Tolerance / 100.0;
+
+            // Calculate the Min, Max, and the nominal attenuation for comparison
+            impedNom = Atten_BTEE_GetAttenuation(r1, r2, r3, r4);
+            impedLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2, r3, r4 }, Atten_BTEE_GetImpedance);
+            impedHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2, r3, r4 }, Atten_BTEE_GetImpedance);
+
+            // Find the worst-case value by comparing the results
+            impedWorst = ((impedHigh - impedNom) > (impedNom - impedLow)) ? impedHigh : impedLow;
+
+            return impedWorst;
+        }
+
+        /** -------------------------- **/
+        /** Auxiliary Function Section **/
+        /** -------------------------- **/
+
+        /** Calculate Attenuation of BTee Attenuator **/
+        // private double Atten_BTEE_GetAttenuation(double r1, double r2, double r3, double r4)
+        private double Atten_BTEE_GetAttenuation(params double[] rList)
+        {
+            // instantiate variables
             double imped;
             double a;
             double atten;
             double[] ABCD = new double[4];
+
+            // Separate values in the passed list / array
+            double r1 = rList[0];
+            double r2 = rList[1];
+            double r3 = rList[1];
+            double r4 = rList[2];
+
+            // If all 4 arguments have been provided
+            if (4 == rList.Length)
+            {
+                r3 = rList[2];
+                r4 = rList[3];
+            }
 
             // Calculate supplemental equations for determining ABCD matrix
             double x0 = r1 + r3 + r2 * (1 + (r3 / r4));
@@ -981,10 +1231,25 @@ namespace rf_tools
         }
 
         /** Calculate Input Impedanceof BTee Attenuator **/
-        private double Atten_BTEE_GetImpedance(double r1, double r2, double r3, double r4)
+        // private double Atten_BTEE_GetImpedance(double r1, double r2, double r3, double r4)
+        private double Atten_BTEE_GetImpedance(params double[] rList)
         {
+            // instantiate variables
             double imped;
             double[] ABCD = new double[4];
+
+            // Separate values in the passed list / array
+            double r1 = rList[0];
+            double r2 = rList[1];
+            double r3 = rList[1];
+            double r4 = rList[2];
+
+            // If all 4 arguments have been provided
+            if (4 == rList.Length)
+            {
+                r3 = rList[2];
+                r4 = rList[3];
+            }
 
             // Calculate supplemental equations for determining ABCD matrix
             double x0 = r1 + r3 + r2 * (1 + (r3 / r4));
@@ -992,14 +1257,35 @@ namespace rf_tools
             double x2 = x0 - r1;
 
             // Find the ABCD matrix parameters
-            ABCD[0] = 1 + r1 * (r2 / x1);
-            ABCD[1] = r1 * (x2 / x0);
-            ABCD[2] = (r1 + r2 + r3) / x1;
-            ABCD[3] = 1 + r1 * (r3 / x1);
+            ABCD[0] = 1 + r1 * (r2 / x1);   // A
+            ABCD[1] = r1 * (x2 / x0);       // B
+            ABCD[2] = (r1 + r2 + r3) / x1;  // C
+            ABCD[3] = 1 + r1 * (r3 / x1);   // D
 
             imped = Math.Sqrt(ABCD[0] * ABCD[1] / (ABCD[2] * ABCD[3]));
 
             return imped;
+        }
+
+        /** Calculate Power Rating of BTee Attenuator **/
+        private double Atten_BTEE_GetPowerRating()
+        {
+            // Instantiate required variables
+            double a;
+            double pwrRating;
+
+            // Calculate the linear attenuation
+            a = Math.Pow(10, btee_atten.Attenuation / 20);
+            
+            // Calculate the maximum rated power depending on attenuation
+            if(a > 2)
+            {
+                pwrRating = 0.0625 * (a - 1) * (a - 1) / (a * a);
+            } else {
+                pwrRating = 0.0625 * (a - 1) / (a * a);
+            }
+
+            return pwrRating;
         }
 
         /** Export LTSpice of BTEE Attenuator **/
@@ -1007,8 +1293,8 @@ namespace rf_tools
         {
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
+            // Get file path to save file
+            string docPath = CommonFunctions.SaveFile(".asc", "LTSpice Schematic|.asc");
 
             adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
             adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
@@ -1024,228 +1310,479 @@ namespace rf_tools
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)btee_atten.Tolerance / 100);
 
-            File.WriteAllText(DocuPath + "btee_attenuator.asc", adapter.ToString());
+            File.WriteAllText(docPath, adapter.ToString());
         }
-        
+
         /** Generate and Export PDF Report **/
         private void Atten_BTEE_Export_Report()
         {
+            // Get file path to user documents
             string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+
+            // Round all values to the number of digits
+            int digits = 3;
+
+            // Must have write permissions to the path folder
+            PdfWriter writer = new PdfWriter(docPath);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            /** Setup Document Formatting **/
+            // Setup Title formatting
+            Paragraph title = new Paragraph("Bridged TEE Attenuator Report")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetFontSize(24);
+
+            // Setup Sub-Title formatting
+            Paragraph subtitle = new Paragraph("By RF Design Toolkit")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetBold()
+               .SetItalic()
+               .SetFontSize(20);
+
+            // Setup Header formatting
+            Paragraph header = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetUnderline()
+               .SetBold()
+               .SetFontSize(16);
+
+            // Setup body formatting
+            Paragraph body = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetFontSize(12);
+
+            /** Generate Document **/
+            // Add title
+            document.Add(title);
+            document.Add(subtitle);
+
+            // Section 1 - Attenuator
+            header.Add("1. Attenuator Design");
+
+            // Gather ideal values
+            body.Add(string.Format("Atten = {0} dB\n", Math.Round(btee_atten.Attenuation, digits)));
+            body.Add(string.Format("Z0 = {0} Ohm\n", Math.Round(btee_atten.Impedance, digits)));
+            body.Add("\n");
+            body.Add(string.Format("The resistors have been calculated using {0}% standard resistor values.\n", btee_atten.Tolerance));
+            body.Add(string.Format("R1 = {0} Ohm\n", btee_atten.Res1));
+            body.Add(string.Format("R2 = {0} Ohm\n", btee_atten.Res2));
+            body.Add(string.Format("R3 = {0} Ohm\n", btee_atten.Res3));
+            body.Add(string.Format("R4 = {0} Ohm\n", btee_atten.Res4));
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 2 - Attenuator
+            header.Add("2. Attenuator Performance");
+
+            // Gather ideal values
+            body.Add(string.Format("Attenuation\n"));
+            body.Add(string.Format("min = {0} dB\n", Math.Round(Atten_BTEE_Eval_GetMinAttenuation(), digits)));
+            body.Add(string.Format("nom = {0} dB\n", Math.Round(Atten_BTEE_Eval_GetAttenuation(), digits)));
+            body.Add(string.Format("max = {0} dB\n", Math.Round(Atten_BTEE_Eval_GetMaxAttenuation(), digits)));
+            body.Add("\n");
+            body.Add(string.Format("Characteristic Impedance\n"));
+            body.Add(string.Format("nom = {0} Ohm\n", Math.Round(Atten_BTEE_Eval_GetImpedance(), digits)));
+            body.Add(string.Format("worst = {0} Ohm\n", Math.Round(Atten_BTEE_Eval_GetWorstImpedance(), digits)));
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 3 - Power Handling
+            header.Add("3. Power Handling");
+
+            double pwr_mw = Atten_BTEE_GetPowerRating() * 1000;
+            double pwr_dbm = 10 * Math.Log10(pwr_mw);
+
+            body.Add("Maximum:\n");
+            body.Add(Math.Round(pwr_mw, digits) + " mW\n");
+            body.Add(Math.Round(pwr_dbm, digits) + " dBm\n\n");
+            body.Add("Note: \nThe maximum input power assumes resistors rated for 1/16 W, at room temperature, and 0% derated.\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            document.Close();
         }
 
         /** Bridged Tee Attenuator - Synthesis / Evalute **/
         public void Atten_BTEE_Run()
         {
-            // Initialize resistor values for a 0 dB attenuator
-            double r1 = 1e6;
-            double r2 = 0;
-            double r3 = 0;
-            double r4 = 1e6;
-
-            // Instantiate useful variables
-            double a;
+            // Instantiate variables
             double imped;
             double tol;
 
-            bool genReport = btee_atten.GenReport;
-
             if (attenRunSynthesis)
             {
-                a = Math.Pow(10, btee_atten.Attenuation / 20);
                 imped = btee_atten.Impedance;
                 tol = btee_atten.Tolerance;
 
-                // Generate ideal resistor values
-                if (1 < a)
-                {
-                    r1 = imped * (a - 1);
-                    r2 = imped;
-                    r3 = imped;
-                    r4 = imped / (a - 1);
-                }
-
-                btee_atten.Res1 = CommonFunctions.GetStdResistor(r1, tol);
-                btee_atten.Res2 = CommonFunctions.GetStdResistor(r2, tol);
-                btee_atten.Res3 = CommonFunctions.GetStdResistor(r3, tol);
-                btee_atten.Res4 = CommonFunctions.GetStdResistor(r4, tol);
+                btee_atten.Res1 = Atten_BTEE_Synth_GetSeriesRes();
+                btee_atten.Res2 = CommonFunctions.GetStdResistor(imped, tol);
+                btee_atten.Res3 = CommonFunctions.GetStdResistor(imped, tol);
+                btee_atten.Res4 = Atten_BTEE_Synth_GetShuntRes();
             }
 
             if (attenRunEvaluate)
             {
-                r1 = btee_atten.Res1;
-                r2 = btee_atten.Res2;
-                r3 = btee_atten.Res3;
-                r4 = btee_atten.Res4;
-
                 // Update properties with new values
-                btee_atten.Attenuation = Atten_BTEE_GetAttenuation(r1, r2, r3, r4);
-                btee_atten.Impedance = Atten_BTEE_GetImpedance(r1, r2, r3, r4);
-            }
-
-            if (genReport)
-            {
-                double[] attenuation = new double[4];
-
-                attenuation[0] = btee_atten.Attenuation;
-                attenuation[1] = btee_atten.Attenuation;
-                attenuation[2] = btee_atten.Attenuation;
-
-                double[] impedance = new double[4];
-
-                impedance[0] = btee_atten.Impedance;
-                impedance[1] = btee_atten.Impedance;
-                impedance[2] = btee_atten.Impedance;
-
-                tol = btee_atten.Tolerance / 100;
-
-                double tempAtten;
-                double tempImpedance;
-
-                int Ntot = 16;
-
-                // Find the maximum and minimum attenuation and impedance
-                for (int i = 0; i < Ntot; i++)
-                {
-                    tempAtten = Atten_BTEE_GetAttenuation(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r3 * (1 + (2 * (4 & i) - 1) * tol),
-                        r4 * (1 + (2 * (8 & i) - 1) * tol));
-
-                    tempImpedance = Atten_BTEE_GetImpedance(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol),
-                        r3 * (1 + (2 * (4 & i) - 1) * tol),
-                        r4 * (1 + (2 * (8 & i) - 1) * tol));
-
-                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
-                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
-
-                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
-                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
-                }
-
-                Gen_Report(attenuation, impedance, new double[] { r1, r2, r3, r4 });
+                btee_atten.Attenuation = Math.Round(Atten_BTEE_Eval_GetAttenuation(), nDigits);
+                btee_atten.Impedance = Math.Round(Atten_BTEE_Eval_GetImpedance(), nDigits);
             }
         }
+        #endregion
 
         /***********************************/
         /** Reflection Attenuator Section **/
         /***********************************/
-        /** Calculate Attenuation of Reflection Attenuator **/
-        private double Atten_Refl_GetAttenuation(double r1, double r2)
+        #region Reflective
+        //----------------------------//
+        // Synthesis Function Section //
+        //----------------------------//
+        /** Calculate Series Resistor of BTEE Attenuator **/
+        private double Atten_REFL_Synth_GetLowRes()
         {
-            double imped;
+            // Initialize resistor values for a 0 dB attenuator
+            double rlow = 0;
+
+            // Instantiate useful variables
+            double a = Math.Pow(10, refl_atten.Attenuation / 20);
+            double imped = refl_atten.Impedance;
+            double tol = refl_atten.Tolerance;
+
+            // Generate ideal resistor values
+            if (1 < a)
+            {
+                rlow = imped * (a - 1) / (a + 1);
+            }
+
+            return CommonFunctions.GetStdResistor(rlow, tol);
+        }
+
+        /** Calculate Series Resistor of BTEE Attenuator **/
+        private double Atten_REFL_Synth_GetHighRes()
+        {
+            // Initialize resistor values for a 0 dB attenuator
+            double rhigh = 0;
+
+            // Instantiate useful variables
+            double a = Math.Pow(10, refl_atten.Attenuation / 20);
+            double imped = refl_atten.Impedance;
+            double tol = refl_atten.Tolerance;
+
+            // Generate ideal resistor values
+            if (1 < a)
+            {
+                rhigh = imped * (a + 1) / (a - 1);
+            }
+
+            return CommonFunctions.GetStdResistor(rhigh, tol);
+        }
+
+        //---------------------------//
+        // Evaluate Function Section //
+        //---------------------------//
+        /** Calculate Attenuation of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetAttenuation()
+        {
+            double r1 = refl_atten.Res1;
+            double r2 = refl_atten.Res2;
+            
+            return Atten_REFL_GetAttenuation(r1, r2);
+        }
+
+        /** Calculate Worst-Case Attenuation of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetWorstAttenuation()
+        {
+            // Instantiate variables
+            double attenHigh, attenLow, attenNom, attenWorst;
+            double tol;
+            double r1, r2;
+
+            // The attenuation can be calculated using the REFL attenuator
+            // algorithm
+            r1 = refl_atten.Res1;
+            r2 = refl_atten.Res2;
+
+            // Convert tolerance to decimal (from %)
+            tol = refl_atten.Tolerance / 100.0;
+
+            attenNom = Atten_REFL_GetAttenuation(r1, r2);
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2 }, Atten_REFL_GetAttenuation);
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2 }, Atten_REFL_GetAttenuation);
+
+            // Compare the high and low attenuation values to determine the worst-case attenuation
+            attenWorst = (attenHigh - attenNom) > (attenNom - attenLow) ? attenHigh : attenLow;
+
+            return attenWorst;
+        }
+
+        /** Calculate Maximum Attenuation of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetMaxAttenuation()
+        {
+            // Instantiate variables
+            double attenHigh;
+            double tol;
+            double r1, r2;
+
+            // The attenuation can be calculated using the REFL attenuator
+            // algorithm
+            r1 = refl_atten.Res1;
+            r2 = refl_atten.Res2;
+
+            // Convert tolerance to decimal (from %)
+            tol = refl_atten.Tolerance / 100.0;
+
+            attenHigh = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2 }, Atten_REFL_GetAttenuation);
+
+            return attenHigh;
+        }
+
+        /** Calculate Minimum Attenuation of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetMinAttenuation()
+        {
+            // Instantiate variables
+            double attenLow;
+            double tol;
+            double r1, r2;
+
+            // The attenuation can be calculated using the REFL attenuator
+            // algorithm
+            r1 = refl_atten.Res1;
+            r2 = refl_atten.Res2;
+
+            // Convert tolerance to decimal (from %)
+            tol = refl_atten.Tolerance / 100.0;
+
+            attenLow = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2 }, Atten_REFL_GetAttenuation);
+
+            return attenLow;
+        }
+
+        /** Calculate Impedance of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetImpedance()
+        {
+            double r1 = refl_atten.Res1;
+            double r2 = refl_atten.Res2;
+
+            return Atten_REFL_GetImpedance(r1, r2);
+        }
+
+        /** Calculate Worst-Case Impedance of Reflection Attenuator **/
+        private double Atten_REFL_Eval_GetWorstImpedance()
+        {
+            // Instantiate variables
+            double high, low, nom, worst;
+            double tol;
+            double r1, r2;
+
+            // The attenuation can be calculated using the REFL attenuator
+            // algorithm
+            r1 = refl_atten.Res1;
+            r2 = refl_atten.Res2;
+
+            // Convert tolerance to decimal (from %)
+            tol = refl_atten.Tolerance / 100.0;
+
+            nom = Atten_REFL_GetImpedance(r1, r2);
+            low = CommonFunctions.FindWorstMinMax("min", tol, new double[] { r1, r2 }, Atten_REFL_GetImpedance);
+            high = CommonFunctions.FindWorstMinMax("max", tol, new double[] { r1, r2 }, Atten_REFL_GetImpedance);
+
+            // Compare the high and low attenuation values to determine the worst-case attenuation
+            worst = (high - nom) > (nom - low) ? high : low;
+
+            return worst;
+        }
+
+        //----------------------------//
+        // Auxiliary Function Section //
+        //----------------------------//
+        /** Calculate Attenuation of Reflection Attenuator **/
+        private double Atten_REFL_GetAttenuation(params double[] rList)
+        {
+            // Instantiate variable
             double a;
             double atten;
 
-            imped = Math.Sqrt(r1 * r2);
+            double r1 = rList[0];
+            double r2 = rList[1];
 
+            double imped = Math.Sqrt(r1 * r2);
+
+            // Calculate attenuation
             a = (imped + r1) / (imped - r1);
             atten = 20 * Math.Log10(Math.Abs(a));
 
             return atten;
         }
 
-        /** Calculate Input Impedanceof Reflection Attenuator **/
-        private double Atten_Refl_GetImpedance(double r1, double r2)
+        /** Calculate Input Impedance of Reflection Attenuator **/
+        private double Atten_REFL_GetImpedance(params double[] rList)
         {
+            // Instantiate variables
+            double r1 = rList[0];
+            double r2 = rList[1];
+            
+            // Calculate the impedance
             double imped = Math.Sqrt(r1 * r2);
 
             return imped;
         }
 
+        /** Calculate Power Rating of Reflection Attenuator **/
+        private double Atten_REFL_GetPowerRating()
+        {
+            double pwrRating;
+
+            // The power dissipated by the resistors is the same as the input
+            pwrRating = 0.0625;
+
+            return pwrRating;
+        }
+
+        /** Generate and Export LTSpice **/
+        private void Atten_Refl_Export_LTSpice()
+        {
+            
+        }
+
         /** Generate and Export PDF Report **/
         private void Atten_Refl_Export_Report()
         {
+            // Get file path to user documents
             string docPath = CommonFunctions.SaveFile(".pdf", "Portable Document Format|.pdf");
+
+            // Round all values to the number of digits
+            int digits = 3;
+
+            // Must have write permissions to the path folder
+            PdfWriter writer = new PdfWriter(docPath);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            /** Setup Document Formatting **/
+            // Setup Title formatting
+            Paragraph title = new Paragraph("Reflective Attenuator Report")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetFontSize(24);
+
+            // Setup Sub-Title formatting
+            Paragraph subtitle = new Paragraph("By RF Design Toolkit")
+               .SetTextAlignment(TextAlignment.CENTER)
+               .SetBold()
+               .SetItalic()
+               .SetFontSize(20);
+
+            // Setup Header formatting
+            Paragraph header = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetUnderline()
+               .SetBold()
+               .SetFontSize(16);
+
+            // Setup body formatting
+            Paragraph body = new Paragraph()
+               .SetTextAlignment(TextAlignment.LEFT)
+               .SetFontSize(12);
+
+            /** Generate Document **/
+            // Add title
+            document.Add(title);
+            document.Add(subtitle);
+
+            // Section 1 - Attenuator
+            header.Add("1. Attenuator Design");
+
+            // Gather ideal values
+            body.Add(string.Format("Atten = {0} dB\n", Math.Round(refl_atten.Attenuation, digits)));
+            body.Add(string.Format("Z0 = {0} Ohm\n", Math.Round(refl_atten.Impedance, digits)));
+            body.Add("\n");
+            body.Add(string.Format("The resistors have been calculated using {0}% standard resistor values.\n", refl_atten.Tolerance));
+            body.Add(string.Format("Rlow = {0} Ohm\n", refl_atten.Res1));
+            body.Add(string.Format("Rhigh = {0} Ohm\n", refl_atten.Res2));
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 2 - Attenuator
+            header.Add("2. Attenuator Performance");
+
+            // Gather ideal values
+            body.Add(string.Format("Attenuation\n"));
+            body.Add(string.Format("min = {0} dB\n", Math.Round(Atten_REFL_Eval_GetMinAttenuation(), digits)));
+            body.Add(string.Format("nom = {0} dB\n", Math.Round(Atten_REFL_Eval_GetAttenuation(), digits)));
+            body.Add(string.Format("max = {0} dB\n", Math.Round(Atten_REFL_Eval_GetMaxAttenuation(), digits)));
+            body.Add("\n");
+            body.Add(string.Format("Characteristic Impedance\n"));
+            body.Add(string.Format("nom = {0} Ohm\n", Math.Round(Atten_REFL_Eval_GetImpedance(), digits)));
+            body.Add(string.Format("worst = {0} Ohm\n", Math.Round(Atten_REFL_Eval_GetWorstImpedance(), digits)));
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            // Remove text from formatted paragraphs
+            header.GetChildren().Clear();
+            body.GetChildren().Clear();
+
+            // Section 3 - Power Handling
+            header.Add("3. Power Handling");
+
+            double pwr_mw = Atten_REFL_GetPowerRating() * 1000;
+            double pwr_dbm = Math.Round(10 * Math.Log10(pwr_mw), digits);
+
+            body.Add("Maximum: \n");
+            body.Add(pwr_mw + " mW\n");
+            body.Add(pwr_dbm + " dBm\n\n");
+            body.Add("Note: \nThe maximum input power assumes resistors rated for 1/16 W, at room temperature, and 0% derated.\n");
+
+            // Add section header and body to document
+            document.Add(header);
+            document.Add(body);
+
+            document.Close();
         }
 
         /** Reflection Attenuator - Synthesis / Evalute **/
         public void Atten_Refl_Run()
         {
-            // Initialize resistor values for a 0 dB attenuator
-            double r1 = 1e6;
-            double r2 = 0;
-
-            double a;
-            double imped;
-            double tol;
-
-            bool genReport = refl_atten.GenReport;
-
             if (attenRunSynthesis)
             {
-                a = Math.Pow(10, refl_atten.Attenuation / 20);
-                imped = refl_atten.Impedance;
-                tol = refl_atten.Tolerance;
-
-                // Generate ideal resistor values
-                if (1 < a)
-                {
-                    r1 = imped * (a - 1) / (a + 1);
-                    r2 = imped * (a + 1) / (a - 1);
-                }
-
-                refl_atten.Res1 = CommonFunctions.GetStdResistor(r1, tol);
-                refl_atten.Res2 = CommonFunctions.GetStdResistor(r2, tol);
+                refl_atten.Res1 = Atten_REFL_Synth_GetLowRes();
+                refl_atten.Res2 = Atten_REFL_Synth_GetHighRes();
             }
 
             if (attenRunEvaluate)
             {
-                r1 = refl_atten.Res1;
-                r2 = refl_atten.Res2;
-
-                refl_atten.Attenuation = Atten_Refl_GetAttenuation(r1, r2); ;
-                refl_atten.Impedance = Atten_Refl_GetImpedance(r1, r2); ;
-            }
-
-            if (genReport)
-            {
-                double[] attenuation = new double[4];
-
-                attenuation[0] = refl_atten.Attenuation;
-                attenuation[1] = refl_atten.Attenuation;
-                attenuation[2] = refl_atten.Attenuation;
-
-                double[] impedance = new double[4];
-
-                impedance[0] = refl_atten.Impedance;
-                impedance[1] = refl_atten.Impedance;
-                impedance[2] = refl_atten.Impedance;
-
-                tol = refl_atten.Tolerance / 100;
-
-                double tempAtten;
-                double tempImpedance;
-
-                int Ntot = 2 ^ attenuation.Length;
-
-                // Find the maximum and minimum attenuation and impedance
-                for (int i = 0; i < Ntot; i++)
-                {
-                    tempAtten = Atten_Refl_GetAttenuation(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol));
-
-                    tempImpedance = Atten_Refl_GetImpedance(
-                        r1 * (1 + (2 * (1 & i) - 1) * tol),
-                        r2 * (1 + (2 * (2 & i) - 1) * tol));
-
-                    if (tempAtten < attenuation[0]) attenuation[0] = tempAtten;
-                    if (tempAtten > attenuation[2]) attenuation[2] = tempAtten;
-
-                    if (tempImpedance < impedance[0]) impedance[0] = tempImpedance;
-                    if (tempImpedance > impedance[2]) impedance[2] = tempImpedance;
-                }
-
-                Gen_Report(attenuation, impedance, new double[] { r1, r2 });
+                refl_atten.Attenuation = Atten_REFL_Eval_GetAttenuation();
+                refl_atten.Impedance = Atten_REFL_Eval_GetImpedance();
             }
         }
+        #endregion
 
-        /*****************************/
-        /** Export Function Section **/
-        /*****************************/
+        /****************************/
+        /** GUI Interface Handlers **/
+        /****************************/
+        /** ---------------- **/
+        /** Export Functions **/
+        /** ---------------- **/
 
         /** LTSpice Export Handler **/
         private void Export_LTSpice(object sender, RoutedEventArgs e)
@@ -1270,7 +1807,7 @@ namespace rf_tools
 
                 /**Tab 3: Reflection Attenuator**/
                 case 3:
-
+                    Atten_Refl_Export_LTSpice();
                     break;
 
                 /**Default: PI Attenuator**/
@@ -1316,102 +1853,10 @@ namespace rf_tools
             }
         }
 
-        /***********************************/
-        /** GUI Interface Handler Section **/
-        /***********************************/
-
-        /** Report Generation Function **/
-        private void Gen_Report(double[] atten, double[] imped, double[] resList)
-        {
-            // Get path to user documents assuming C drive
-            string UserName = Environment.UserName;
-            string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
-
-            // Must have write permissions to the path folder
-            PdfWriter writer = new PdfWriter(DocuPath + "Attenuator_Report.pdf");
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
-
-            double a = Math.Pow(10, atten[1] / 20);
-            double maxPwr = 18 + 10 * (2.647 / (2.647 + a));
-
-            /** Setup Document Formats **/
-            // Setup Title formatting
-            Paragraph title = new Paragraph("Attenuator Report")
-               .SetTextAlignment(TextAlignment.CENTER)
-               .SetFontSize(24);
-
-            // Setup Header formatting
-            Paragraph header = new Paragraph()
-               .SetTextAlignment(TextAlignment.LEFT)
-               .SetFontSize(16);
-
-            // Setup body formatting
-            Paragraph body = new Paragraph()
-               .SetTextAlignment(TextAlignment.LEFT)
-               .SetFontSize(12);
-
-            /** Generature Document **/
-            // Add title
-            document.Add(title);
-
-            // Section 1 - Attenuator
-            header.Add("1. Attenuator");
-
-            for (int i = 0; i < resList.Length; i++)
-                body.Add(string.Format("R{0} = {1} Ohm\n", i + 1, resList[i]));
-
-            // Add section header and body to document
-            document.Add(header);
-            document.Add(body);
-
-            // Remove text from formatted paragraphs
-            header.GetChildren().Clear();
-            body.GetChildren().Clear();
-
-            // Section 2 - Attenuation
-            header.Add("2. Attenuation");
-
-            body.Add("Minimum: " + atten[0] + " dB\n");
-            body.Add("Nominal: " + atten[1] + " dB\n");
-            body.Add("Maximum: " + atten[2] + " dB\n");
-
-            // Add section header and body to document
-            document.Add(header);
-            document.Add(body);
-
-            // Remove text from formatted paragraphs
-            header.GetChildren().Clear();
-            body.GetChildren().Clear();
-
-            // Section 3 - Impedance Properties
-            header.Add("3. Impedance");
-
-            body.Add("Minimum: " + imped[0] + " Ohm\n");
-            body.Add("Nominal: " + imped[1] + " Ohm\n");
-            body.Add("Maximum: " + imped[2] + " Ohm\n");
-
-            // Add section header and body to document
-            document.Add(header);
-            document.Add(body);
-
-            // Remove text from formatted paragraphs
-            header.GetChildren().Clear();
-            body.GetChildren().Clear();
-
-            // Section 4 - Power Handling
-            header.Add("4. Power Handling");
-
-            body.Add("Maximum: " + maxPwr + " dBm\n");
-            body.Add("Note: The maximum input power assumes resistors rated for 1/16 W, at room temperature and 0% derated.\n");
-
-            // Add section header and body to document
-            document.Add(header);
-            document.Add(body);
-
-            document.Close();
-        }
-
+        /** --------------- **/
+        /** Other Functions **/
+        /** --------------- **/
+        
         /** Synthesis Click Handler **/
         private void Atten_Synthesis_Click(object sender, RoutedEventArgs e)
         {

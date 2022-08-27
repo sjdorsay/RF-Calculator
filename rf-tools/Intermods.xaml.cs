@@ -103,9 +103,8 @@ namespace rf_tools
     public partial class Intermods : Window
     {
         private readonly IntermodProducts intermod = new IntermodProducts();
-
-        double[] dataX = new double[4];
-        double[] dataY = new double[4];
+        readonly double[] dataX = new double[4];
+        readonly double[] dataY = new double[4];
         private bool updateTable = false;
         private readonly DispatcherTimer timer = new DispatcherTimer();
 

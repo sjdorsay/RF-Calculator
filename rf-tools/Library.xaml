@@ -108,7 +108,7 @@
         </StackPanel>
 
         <ScrollViewer Height="280">
-            <DataGrid x:Name="libDataGrid" Margin="10 5" CanUserAddRows="False" AlternatingRowBackground="LightBlue" AlternationCount="2" AutoGenerateColumns="True" />
+            <DataGrid x:Name="libDataGrid" Margin="10 5" CanUserAddRows="False" AlternatingRowBackground="LightGreen" AlternationCount="2" AutoGenerateColumns="True" />
         </ScrollViewer>
 
         <Grid x:Name="libGrid" Margin="10 10 10 0">

@@ -79,7 +79,7 @@
             <Label>Calculator</Label>
             <WrapPanel Orientation="Horizontal" Width="300">
                 <Button Click="Button_Intermodulation" Background="SlateGray"/>
-                <Button Click="Button_UnderConstruction" Background="SlateGray"/>
+                <Button Click="Button_Impedance" Background="SlateGray"/>
                 <Button Click="Button_UnderConstruction" Background="SlateGray"/>
             </WrapPanel>
         </StackPanel>

@@ -52,7 +52,7 @@
 				<p><span class="image left"><img src="images/Filter_Config.png" alt="Filter Configuration" /></span>The filter design tool is separated into configuration and implementation tabs. When the configuration tab (the gear icon) has been selected the user can input their desired filter response. These values are then stored internally to be used for all the filter implementation tabs: the prototype only needs to be specified once. When the required information has been added, select the filter implementation by clicking on the related tab. From here the user should fill in any associated data before clicking "Synthesize".</p>
 
 				<h2>Configuration</h2>
-				<p>In the configuration tab the user can select the filter type: LPF, HPF, BP, or BSF; the filter order: 1 - 10; the filter architecture: butterworth, chebyshev, or linear phase; and the first element: series, or shunt. Once these parameters have been selected the user can enter the system impedance, ripple, bandwidth, and center/cutoff frequency. The tool calculates the prototype values assuming 3 dB cutoff frequency for all filter architectures. This information is important to takenote of since the natural cutoff frequency of the chebyshev filter is not the same as the 3 dB cutoff frequency.</p>
+				<p>In the configuration tab the user can select the filter type: LPF, HPF, BPF, or BSF; the filter order: 1 - 10; the filter architecture: butterworth, chebyshev, or linear phase; and the first element: series, or shunt. Once these parameters have been selected the user can enter the system impedance, ripple, bandwidth, and center/cutoff frequency. The tool calculates the prototype values assuming 3 dB cutoff frequency for all filter architectures. This information is important to takenote of since the natural cutoff frequency of the chebyshev filter is not the same as the 3 dB cutoff frequency.</p>
 
 				<h2>Lumped Element</h2>
 				<p>The lumped element filter is the realization of the filter prototype as inductors and capacitors. In the Synthesis section is a drop-down box that allows the user to select between ideal component values and standardized component values. This tool also allows for setting minimum component values. </p>
@@ -61,6 +61,10 @@
 				<h2>Stepped Impedance</h2>
 				<h2>Quarter Wavelength Resonator</h2>
 				<h2>Coupled Line</h2>
+				
+				<h1>References</h1>
+				<p>[1] Microwave Engineering 4th Ed. by David M. Pozar</p>
+				<p>[2] Analog and Digital Filter Design 2nd Ed. by Steve Winder</p>
 			</div>
 		</div>
 

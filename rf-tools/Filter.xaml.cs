@@ -276,14 +276,16 @@ namespace rf_tools
     ///
     public partial class Filter : Window
     {
-        readonly double[][] flatPhaseProto;
+        private readonly double[][] flatPhaseProto;
 
-        readonly FilterPrototype prototype = new FilterPrototype();
-        readonly LumpedFilterParams lumpedParams = new LumpedFilterParams();
-        readonly CommLineFilterParams commParams = new CommLineFilterParams();
-        readonly SteppedFilterParams steppedParams = new SteppedFilterParams();
-        readonly QuartWaveFilterParams quartWaveParams = new QuartWaveFilterParams();
-        readonly CoupledLineParams coupledLineParams = new CoupledLineParams();
+        private readonly FilterPrototype prototype = new FilterPrototype();
+        private readonly LumpedFilterParams lumpedParams = new LumpedFilterParams();
+        private readonly CommLineFilterParams commParams = new CommLineFilterParams();
+        private readonly SteppedFilterParams steppedParams = new SteppedFilterParams();
+        private readonly QuartWaveFilterParams quartWaveParams = new QuartWaveFilterParams();
+        private readonly CoupledLineParams coupledLineParams = new CoupledLineParams();
+
+        private readonly DispatcherTimer timer = new DispatcherTimer();
 
         public Filter()
         {
@@ -340,7 +342,6 @@ namespace rf_tools
             if (filtCoupLineTab != null)
                 filtCoupLineTab.IsEnabled = prototype.IsBpfEn;
 
-            DispatcherTimer timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(0.5);
             timer.Tick += Timer_Tick;
 
@@ -1089,6 +1090,10 @@ namespace rf_tools
 
             double[] impedVals = new double[NTlines];
             double[] angleVals = new double[NTlines];
+
+            double zStub;
+            double zLine;
+
             double n2;
 
             int j = 0;
@@ -1103,10 +1108,13 @@ namespace rf_tools
                         // Use R-K transformation
                         n2 = 1 + 1 / prototype.ProtoVals[0];
 
-                        impedVals[0] = n2 * impedance;
+                        zStub = n2 * impedance;
+                        zLine = n2 * prototype.ProtoVals[0] * impedance;
+
+                        impedVals[0] = zStub;
                         angleVals[0] = 45;
 
-                        impedVals[1] = n2 * impedance * prototype.ProtoVals[0];
+                        impedVals[1] = zLine;
                         angleVals[1] = 45;
 
                         j += 2;
@@ -1118,10 +1126,13 @@ namespace rf_tools
                         // Use R-K transformation
                         n2 = 1 + 1 / prototype.ProtoVals[Ncomp - 1];
 
-                        impedVals[NTlines - 1] = n2 * impedance;
+                        zStub = n2 * impedance;
+                        zLine = n2 * prototype.ProtoVals[Ncomp - 1] * impedance;
+
+                        impedVals[NTlines - 1] = zStub;
                         angleVals[NTlines - 1] = 45;
 
-                        impedVals[NTlines - 2] = n2 * impedance * prototype.ProtoVals[0];
+                        impedVals[NTlines - 2] = zLine;
                         angleVals[NTlines - 2] = 45;
 
                         j += 2;
@@ -1129,49 +1140,34 @@ namespace rf_tools
 
                     if ((0 < i) && (Ncomp - 1 > i))
                     {
-                        // Split inductor in two
-                        n2 = 1 + 2 / prototype.ProtoVals[i];
+                        // Use R-K transformation
+                        n2 = 1 + 1 / prototype.ProtoVals[i];
 
-                        double Z1 = n2 * prototype.ProtoVals[i] * impedance;
-                        double Z2 = n2 * impedance;
+                        zStub = n2 * impedance;
+                        zLine = n2 * prototype.ProtoVals[i] * impedance;
+
                         double tempImped;
 
                         // Add additional capacitance to existing value
                         tempImped = 1 / impedVals[j - 1];
-                        tempImped += 1 / Z2;
+                        tempImped += 1 / zStub;
                         tempImped = 1 / tempImped;
 
                         impedVals[j - 1] = tempImped;
                         angleVals[j - 1] = 45;
 
-                        impedVals[j] = Z1;
-                        angleVals[j] = 90;
-
-                        impedVals[j + 1] = Z2;
-                        angleVals[j + 1] = 45;
+                        impedVals[j] = zLine;
+                        angleVals[j] = 45;
 
                         j += 1;
                     }
                 }
                 else
                 {
-                    if (0 == impedVals[j])
-                    {
-                        impedVals[j] = impedance / prototype.ProtoVals[i];
-                        angleVals[j] = 45;
-                    }
-                    else
-                    {
-                        double tempImped;
+                    zStub = impedance / prototype.ProtoVals[i];
 
-                        // Add additional capacitance to existing value
-                        tempImped = 1 / impedVals[j];
-                        tempImped += prototype.ProtoVals[i] / impedance;
-                        tempImped = 1 / tempImped;
-
-                        impedVals[j] = tempImped;
-                        angleVals[j] = 45;
-                    }
+                    impedVals[j] = zStub;
+                    angleVals[j] = 45;
 
                     j += 1;
                 }
@@ -1441,10 +1437,6 @@ namespace rf_tools
         {
             if (sender.GetType() != typeof(ComboBox))
                 return;
-
-            ComboBoxItem comboObj = (ComboBoxItem)e.AddedItems[0];
-
-            string selectedItem = comboObj.Content.ToString();
         }
 
         private void Help_Button_Click(object sender, RoutedEventArgs e)
@@ -1487,9 +1479,14 @@ namespace rf_tools
 
         }
 
-        void Timer_Tick(object sender, EventArgs e)
+        private void Timer_Tick(object sender, EventArgs e)
         {
             UpdateFilterImages();
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            timer.Stop();
         }
     }
 }

@@ -65,10 +65,10 @@
 					<h1>Power Handling</h1>
 					<p>The power handling capability of the presented attenuators depend on the selected resistor rating. The basic idea is that the power dissipation is spread among the resistors in the circuit, and the total amount of power dissipated is related to the attenuation value. In essence this means that lower valued attenuators can handle higher power levels.</p>
 					<p>In order to further increase the power handling of the circuit there are a couple paths to follow:</p>
-					<ol>
-						<li>Increase Package Size</li>
-						<li>Material Change</li>
-					</ol>
+						<ol>
+							<li>Increase Package Size</li>
+							<li>Material Change</li>
+						</ol>
 					<p>Increasing package size will yield a higher power rating at the expense of board real-estate and wideband performance. For example going from 0402 resistors to 0603 might double the total amount of continuous sustainable power level. For many applications this may be enough.</p>
 					<p>However, this is not always acceptable. Certain circumstances will require 50 W (or higher) handling at 50% de-rating. Designing an attenuator for continuous 100 W operation cannot be done by simply increasing package size. Situations such as the one presented would warrant the use higher power materials at the expense of broadband performance.</p>
 					<p>Many materials exist for resistors,
@@ -81,18 +81,26 @@
 						</ol>
 					</p>
 
-					<p>The generated report displays power handling assuming an 0402 1/16 W resistor is being used. The way to convert this number into the designed application is by the following equation</p>
-					<p>power + 10 * log(16 * rating)</p>
-
-					<h1>Temperature Performance</h1>
-
+					<p>
+					The generated report displays power handling assuming an 0402 62.5 mW resistor is being used. The way to convert this number into the designed application is by the following equation<br>
+					</p><p>
+					power + 10 * log(16 * rating)
+					</p>
+					
 					<h1>Applications</h1>
 					<h2>Variable Attenuator</h2>
-
+					
 					<h2>Gain Equalizer</h2>
+					<p>Gain equalizing is the process of compensating a gradual slope over a wide bandwidth. This is achieved using a filter-attenuator hybrid of sorts; essentially adding frequency dependent components to the attenuator.</p>
+					<p>It can be tuned by selecting the attenuation value for determining the steepness of the slope and selecting the L-C for determining the position of the slope. </p>
 
 					<h2>Temperature Compensation</h2>
-
+					<p>Temperature-related slope compensation can be achieved by replacing the resistors with thermally-sensitive resistors such as thermistor, or RTD.</p>
+					
+					<h1>References</h1>
+					<p>
+					[1] Microwave Engineering 4th Ed. by David M. Pozar
+					</p>
 				</div>
 			</div>
 	
