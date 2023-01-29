@@ -421,18 +421,26 @@ namespace rf_tools
 
             string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
-            adapter.AddSource(1, 0, new LTSpiceCoords(-64, 16, 0));
-            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
-                string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(2, 3, new LTSpiceCoords(80, 32, 0),
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-64, 16, 0));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
 
-            adapter.AddResistor(3, 0, new LTSpiceCoords(80, -32, 0),
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 3 }, new LTSpiceCoords(80, 32, 0),
+                string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(80, -32, 0),
                 string.Format("{{mc({0}, tolR)}}", "50"));
 
-            adapter.AddResistor(4, 2, new LTSpiceCoords(224, 0, 90),
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 4, 2 }, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(4, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            // Add resistor at the specified location and rotation
+            adapter.AddResistor(new int[] { 4, 0 }, new LTSpiceCoords(208, 16, 0), "50");
 
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)resPowDiv.Tolerance / 100);
@@ -599,14 +607,22 @@ namespace rf_tools
             string UserName = Environment.UserName;
             string DocuPath = "C:\\Users\\" + UserName + "\\Documents\\";
 
-            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
-            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-48, 16, 0));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 0 }, new LTSpiceCoords(80, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 2 }, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            // Add resistor at the specified location and rotation
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(208, 16, 0), "50");
 
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)resPowDiv.Tolerance / 100);
@@ -748,18 +764,26 @@ namespace rf_tools
             LTSpiceAdapter adapter = new LTSpiceAdapter();
             string DocuPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
 
-            adapter.AddSource(1, 0, new LTSpiceCoords(-64, 16, 0));
-            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
-                string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(2, 3, new LTSpiceCoords(80, 32, 0),
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-64, 16, 0));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
 
-            adapter.AddResistor(3, 0, new LTSpiceCoords(80, -32, 0),
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 3 }, new LTSpiceCoords(80, 32, 0),
+                string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(80, -32, 0),
                 string.Format("{{mc({0}, tolR)}}", "50"));
 
-            adapter.AddResistor(4, 2, new LTSpiceCoords(224, 0, 90),
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 4, 2 }, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", resPowDiv.Res));
-            adapter.AddResistor(4, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            // Add resistor at the specified location and rotation
+            adapter.AddResistor(new int[] { 4, 0 }, new LTSpiceCoords(208, 16, 0), "50");
 
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)resPowDiv.Tolerance / 100);

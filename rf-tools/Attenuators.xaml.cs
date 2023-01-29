@@ -434,23 +434,39 @@ namespace rf_tools
         /** Export LTSpice of PI Attenuator **/
         private void Atten_PI_Export_LTSpice()
         {
+            // Create an LTSpiceAdapter object to generate LTSpice circuit
             LTSpiceAdapter adapter = new LTSpiceAdapter();
 
+            // Request save file location from the user using the common functions library
             string docPath = CommonFunctions.SaveFile(".asc", "LTSpice File|.asc");
-            
-            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
 
-            adapter.AddResistor(1, 0, new LTSpiceCoords(0, 16, 0),
+            // Add AC signal source to nodes 1 & 0 at the specified location and rotation
+            adapter.AddSource(new[] { 1, 0 }, new LTSpiceCoords(-80, 80, 0));
+
+            // Add resistor to nodes 1 & 0 at the specified location and rotation
+            // with monte-carlo enabled
+            adapter.AddResistor(new[] { 1, 0 }, new LTSpiceCoords(0, 80, 0),
                 string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
-            
-            adapter.AddResistor(2, 1, new LTSpiceCoords(144, 0, 90),
+
+            // Add resistor to nodes 1 & 0 at the specified location and rotation
+            // with monte-carlo enabled
+            adapter.AddResistor(new[] { 2, 1 }, new LTSpiceCoords(160, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", pi_atten.Res2));
-            
-            adapter.AddResistor(2, 0, new LTSpiceCoords(128, 16, 0),
-                string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
-            
-            adapter.AddResistor(2, 0, new LTSpiceCoords(176, 16, 0), "50");
 
+            // Add resistor to nodes 1 & 0 at the specified location and rotation
+            // with monte-carlo enabled
+            adapter.AddResistor(new[] { 2, 0 }, new LTSpiceCoords(208, 80, 0),
+                string.Format("{{mc({0}, tolR)}}", pi_atten.Res1));
+
+            // Add resistor to nodes 1 & 0 at the specified location and rotation
+            // with monte-carlo enabled
+            adapter.AddResistor(new[] {2,0}, new LTSpiceCoords(448, 80, 0), "50");
+
+            // Setup simulation
+            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
+            adapter.AddParameter(0, -64, "tolR", (float)pi_atten.Tolerance / 100);
+
+            // Write the full text to the LTSpice file
             File.WriteAllText(docPath, adapter.ToString());
         }
 
@@ -850,18 +866,22 @@ namespace rf_tools
             string docPath = CommonFunctions.SaveFile(".asc", "LTSpice Schematic|.asc");
 
             //Add signal source
-            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-48, 16, 0));
 
-            // Add TEE Attenuator resistors
-            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
-            adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 0 }, new LTSpiceCoords(80, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res2));
-            adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 2 }, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", tee_atten.Res1));
 
             // Add Load resistor
-            adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(208, 16, 0), "50");
 
             // Setup simulation
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
@@ -1296,16 +1316,27 @@ namespace rf_tools
             // Get file path to save file
             string docPath = CommonFunctions.SaveFile(".asc", "LTSpice Schematic|.asc");
 
-            adapter.AddSource(1, 0, new LTSpiceCoords(-48, 16, 0));
-            adapter.AddResistor(2, 1, new LTSpiceCoords(96, 0, 90),
+            // Add AC source at the specified location and rotation
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-48, 16, 0));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", btee_atten.Res2));
-            adapter.AddResistor(2, 0, new LTSpiceCoords(80, 16, 0),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 0 }, new LTSpiceCoords(80, 16, 0),
                 string.Format("{{mc({0}, tolR)}}", btee_atten.Res4));
-            adapter.AddResistor(3, 2, new LTSpiceCoords(224, 0, 90),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 2 }, new LTSpiceCoords(224, 0, 90),
                 string.Format("{{mc({0}, tolR)}}", btee_atten.Res3));
-            adapter.AddResistor(3, 1, new LTSpiceCoords(144, -32, 90),
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 1 }, new LTSpiceCoords(144, -32, 90),
                 string.Format("{{mc({0}, tolR)}}", btee_atten.Res1));
-            adapter.AddResistor(3, 0, new LTSpiceCoords(208, 16, 0), "50");
+
+            // Add resistor at the specified location and rotation
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(208, 16, 0), "50");
 
             adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
             adapter.AddParameter(0, -64, "tolR", (float)btee_atten.Tolerance / 100);
@@ -1655,7 +1686,29 @@ namespace rf_tools
         /** Generate and Export LTSpice **/
         private void Atten_Refl_Export_LTSpice()
         {
-            
+            LTSpiceAdapter adapter = new LTSpiceAdapter();
+
+            // Get file path to save file
+            string docPath = CommonFunctions.SaveFile(".asc", "LTSpice Schematic|.asc");
+
+            // Add AC source at the specified location and rotation
+            adapter.AddSource(new int[] { 1, 0 }, new LTSpiceCoords(-48, 16, 0));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 2, 1 }, new LTSpiceCoords(96, 0, 90),
+                string.Format("{{mc({0}, tolR)}}", refl_atten.Res2));
+
+            // Add resistor at the specified location and rotation with monte-carlo enabled
+            adapter.AddResistor(new int[] { 3, 1 }, new LTSpiceCoords(144, -32, 90),
+                string.Format("{{mc({0}, tolR)}}", refl_atten.Res1));
+
+            // Add resistor at the specified location and rotation
+            adapter.AddResistor(new int[] { 3, 0 }, new LTSpiceCoords(208, 16, 0), "50");
+
+            adapter.AddNetSim(0, -128, 100000000, 4000000000, 100);
+            adapter.AddParameter(0, -64, "tolR", (float)refl_atten.Tolerance / 100);
+
+            File.WriteAllText(docPath, adapter.ToString());
         }
 
         /** Generate and Export PDF Report **/
@@ -1812,7 +1865,7 @@ namespace rf_tools
 
                 /**Default: PI Attenuator**/
                 default:
-                    Atten_PI_Run();
+                    Atten_PI_Export_LTSpice();
                     break;
             }
         }
